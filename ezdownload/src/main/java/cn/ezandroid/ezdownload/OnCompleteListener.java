@@ -1,7 +1,7 @@
 package cn.ezandroid.ezdownload;
 
 /**
- * OnCompleteListener
+ * 下载结束监听器
  *
  * @author like
  * @date 2018-09-03

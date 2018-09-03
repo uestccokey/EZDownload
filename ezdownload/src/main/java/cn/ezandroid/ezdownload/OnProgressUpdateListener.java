@@ -1,7 +1,7 @@
 package cn.ezandroid.ezdownload;
 
 /**
- * OnProgressUpdateListener
+ * 下载进度监听器
  *
  * @author like
  * @date 2018-09-03

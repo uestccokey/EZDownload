@@ -1,7 +1,7 @@
 package cn.ezandroid.ezdownload;
 
 /**
- * IDownloadListener
+ * 下载监听器
  *
  * @author like
  * @date 2018-09-03

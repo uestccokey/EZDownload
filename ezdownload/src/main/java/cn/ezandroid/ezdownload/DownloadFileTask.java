@@ -16,7 +16,7 @@ import static cn.ezandroid.ezdownload.HttpState.HTTP_STATE_SC_PARTIAL_CONTENT;
 import static cn.ezandroid.ezdownload.HttpState.HTTP_STATE_SC_REQUESTED_RANGE_NOT_SATISFIABLE;
 
 /**
- * 下载（分片）文件
+ * 下载（分片）文件任务
  *
  * @author like
  * @date 2018-09-03

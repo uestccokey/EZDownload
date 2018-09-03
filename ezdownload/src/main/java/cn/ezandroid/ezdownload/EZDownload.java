@@ -8,7 +8,7 @@ import java.util.concurrent.Executors;
 import static cn.ezandroid.ezdownload.DownloadStatus.COMPLETED;
 
 /**
- * EZDownload
+ * 文件下载
  *
  * @author like
  * @date 2018-09-03

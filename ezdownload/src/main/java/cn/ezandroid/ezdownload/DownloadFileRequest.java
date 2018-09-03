@@ -3,7 +3,7 @@ package cn.ezandroid.ezdownload;
 import java.io.Serializable;
 
 /**
- * DownloadFileRequest
+ * 文件下载请求
  *
  * @author like
  * @date 2018-09-03
