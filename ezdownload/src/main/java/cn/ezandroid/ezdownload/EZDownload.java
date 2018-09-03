@@ -27,7 +27,7 @@ public class EZDownload {
         private String mUrl;
         private String mPath;
 
-        private int mThreadCount = Runtime.getRuntime().availableProcessors(); // 默认为手机核数
+        private int mThreadCount = 1;
 
         private IDownloadListener mDownloadListener;
 
@@ -51,7 +51,7 @@ public class EZDownload {
         }
 
         public Downloader setThreadCount(int threadCount) {
-            mThreadCount = threadCount;
+            mThreadCount = Math.max(threadCount, 1);
             return this;
         }
 
@@ -105,7 +105,7 @@ public class EZDownload {
          */
         public Downloader start() {
             if (mExecutorService == null || mExecutorService.isShutdown()) {
-                mExecutorService = Executors.newFixedThreadPool(Math.max(mThreadCount, 1));
+                mExecutorService = Executors.newFixedThreadPool(mThreadCount);
             }
 
             DownloadSizeTask downloadSizeTask = new DownloadSizeTask();
@@ -173,7 +173,7 @@ public class EZDownload {
                 start();
             } else {
                 if (mExecutorService == null || mExecutorService.isShutdown()) {
-                    mExecutorService = Executors.newFixedThreadPool(Math.max(mThreadCount, 1));
+                    mExecutorService = Executors.newFixedThreadPool(mThreadCount);
                 }
 
                 mStatus = DownloadStatus.DOWNLOADING;
