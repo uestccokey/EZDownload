@@ -66,9 +66,14 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
             connection.setRequestMethod("GET");
 
             int code = connection.getResponseCode();
+
+            if (isCancelled()) {
+                return;
+            }
+
             Log.e("DownloadFileTask", "onConnected:" + code + " " + mDownloadFileRequest.getUrl() + " " + mDownloadFileRequest.toString());
             if (code == HTTP_STATE_SC_OK || code == HTTP_STATE_SC_PARTIAL_CONTENT) {
-                onTaskStatusChanged(DOWNLOADING);
+                mDownloadFileRequest.setStatus(DOWNLOADING);
 
                 RandomAccessFile randomAccessFile = null;
                 InputStream inputStream = null;
@@ -83,17 +88,17 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
 
                     byte[] buffer = new byte[1024 * 1000];
                     while ((length = inputStream.read(buffer)) != -1) {
-                        if (!isCancelled()) {
-                            currentLength += length;
-                            if (mContentLength > 0) {
-                                publishProgress(((float) currentLength / mContentLength * 100),
-                                        ((float) currentLength / mDownloadFileRequest.getTotalContentLength() * 100));
-                            }
-                            randomAccessFile.write(buffer, 0, length);
-                            mDownloadFileRequest.setCurrentLength(currentLength);
-                        } else {
-                            break;
+                        if (isCancelled()) {
+                            return;
                         }
+
+                        currentLength += length;
+                        if (mContentLength > 0) {
+                            publishProgress(((float) currentLength / mContentLength * 100),
+                                    ((float) currentLength / mDownloadFileRequest.getTotalContentLength() * 100));
+                        }
+                        randomAccessFile.write(buffer, 0, length);
+                        mDownloadFileRequest.setCurrentLength(currentLength);
                     }
                 } finally {
                     if (randomAccessFile != null) {
@@ -106,10 +111,20 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
             } else if (code == HTTP_STATE_SC_REQUESTED_RANGE_NOT_SATISFIABLE) {
                 // 只会在分段下载完成后，但程序再次请求时出现
             } else {
-                onTaskStatusChanged(SUSPEND);
+                mDownloadFileRequest.setStatus(SUSPEND);
+
+                mDownloadFileRequest.addRetryCount();
+                if (mDownloadFileRequest.shouldRetry()) {
+                    startDownload();
+                }
             }
         } catch (Exception e) {
-            onTaskStatusChanged(SUSPEND);
+            mDownloadFileRequest.setStatus(SUSPEND);
+
+            mDownloadFileRequest.addRetryCount();
+            if (mDownloadFileRequest.shouldRetry()) {
+                startDownload();
+            }
             e.printStackTrace();
         } finally {
             if (connection != null) {
@@ -130,15 +145,15 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
     protected void onPostExecute(Object object) {
         super.onPostExecute(object);
         if (mDownloadFileRequest.getStatus() != SUSPEND) {
-            onTaskStatusChanged(COMPLETED);
-            Log.e("DownloadFileTask", "onCompleted:" + mDownloadFileRequest.getUrl() + " " + mDownloadFileRequest.toString());
+            mDownloadFileRequest.setStatus(COMPLETED);
+//            Log.e("DownloadFileTask", "onCompleted:" + mDownloadFileRequest.getUrl() + " " + mDownloadFileRequest.toString());
             if (mCompleteListener != null) {
                 mCompleteListener.onCompleted(mDownloadFileRequest.getUrl(), mContentLength);
             }
         } else {
-            Log.e("DownloadFileTask", "onFailed:" + mDownloadFileRequest.getUrl() + " " + mDownloadFileRequest.toString());
+//            Log.e("DownloadFileTask", "onSuspend:" + mDownloadFileRequest.getUrl() + " " + mDownloadFileRequest.toString());
             if (mCompleteListener != null) {
-                mCompleteListener.onFailed();
+                mCompleteListener.onSuspend();
             }
         }
     }
@@ -146,20 +161,10 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
     @Override
     protected void onCancelled() {
         super.onCancelled();
-        onTaskStatusChanged(SUSPEND);
-    }
-
-    private void onTaskStatusChanged(DownloadStatus taskStatus) {
-        mDownloadFileRequest.setStatus(taskStatus);
-        switch (taskStatus) {
-            case SUSPEND:
-                mDownloadFileRequest.addRetryCount();
-                if (mDownloadFileRequest.shouldRetry()) {
-                    startDownload();
-                }
-                break;
-            default:
-                break;
+        mDownloadFileRequest.setStatus(SUSPEND);
+//        Log.e("DownloadFileTask", "onSuspend:" + mDownloadFileRequest.getUrl() + " " + mDownloadFileRequest.toString());
+        if (mCompleteListener != null) {
+            mCompleteListener.onSuspend();
         }
     }
 

@@ -8,7 +8,7 @@ package cn.ezandroid.ezdownload;
  */
 interface OnCompleteListener {
 
-    void onFailed();
+    void onSuspend();
 
     void onCompleted(String url, int contentLength);
 }

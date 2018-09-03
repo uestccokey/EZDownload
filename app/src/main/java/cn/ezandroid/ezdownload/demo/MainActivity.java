@@ -43,9 +43,9 @@ public class MainActivity extends AppCompatActivity {
                                     .setThreadCount(4)
                                     .setDownloadListener(new IDownloadListener() {
                                         @Override
-                                        public void onFailed() {
+                                        public void onSuspend() {
                                             mDownloadButton.setText("继续");
-                                            Log.e("MainActivity", "onFailed");
+                                            Log.e("MainActivity", "onSuspend");
                                         }
 
                                         @Override

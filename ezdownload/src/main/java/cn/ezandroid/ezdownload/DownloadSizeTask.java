@@ -53,14 +53,14 @@ public class DownloadSizeTask extends AsyncTask<String, Integer, Object> {
                 Log.e("DownloadSizeTask", "Redirect url:" + location);
                 if (TextUtils.isEmpty(location) || mRedirectCount > MAX_REDIRECT_COUNT) {
                     if (mCompleteListener != null) {
-                        mCompleteListener.onFailed();
+                        mCompleteListener.onSuspend();
                     }
                 } else {
                     doInBackground(location);
                 }
             } else {
                 if (mCompleteListener != null) {
-                    mCompleteListener.onFailed();
+                    mCompleteListener.onSuspend();
                 }
             }
         } catch (Exception e) {

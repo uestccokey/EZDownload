@@ -8,7 +8,7 @@ package cn.ezandroid.ezdownload;
  */
 public interface IDownloadListener {
 
-    default void onFailed() {
+    default void onSuspend() {
     }
 
     default void onProgressUpdated(float progress) {

@@ -111,10 +111,10 @@ public class EZDownload {
             DownloadSizeTask downloadSizeTask = new DownloadSizeTask();
             downloadSizeTask.setOnCompleteListener(new OnCompleteListener() {
                 @Override
-                public void onFailed() {
+                public void onSuspend() {
                     mStatus = DownloadStatus.SUSPEND;
                     if (mDownloadListener != null) {
-                        mDownloadListener.onFailed();
+                        mDownloadListener.onSuspend();
                     }
                 }
 
@@ -137,10 +137,10 @@ public class EZDownload {
                         });
                         downloadFileTask.setCompleteListener(new OnCompleteListener() {
                             @Override
-                            public void onFailed() {
+                            public void onSuspend() {
                                 mStatus = DownloadStatus.SUSPEND;
                                 if (mDownloadListener != null) {
-                                    mDownloadListener.onFailed();
+                                    mDownloadListener.onSuspend();
                                 }
                             }
 
@@ -165,8 +165,10 @@ public class EZDownload {
 
         /**
          * 恢复下载
+         *
+         * @return
          */
-        public void resume() {
+        public Downloader resume() {
             if (mFileTasks.isEmpty()) {
                 start();
             } else {
@@ -189,18 +191,24 @@ public class EZDownload {
                     e.printStackTrace();
                 }
             }
+            return this;
         }
 
         /**
          * 暂停下载
+         *
+         * @return
          */
-        public void pause() {
+        public Downloader pause() {
             mStatus = DownloadStatus.SUSPEND;
             for (DownloadFileTask task : mFileTasks) {
                 task.cancel(true);
             }
 
-            mExecutorService.shutdownNow();
+            if (mExecutorService != null) {
+                mExecutorService.shutdownNow();
+            }
+            return this;
         }
 
         /**
@@ -212,7 +220,9 @@ public class EZDownload {
                 task.cancel(true);
             }
 
-            mExecutorService.shutdownNow();
+            if (mExecutorService != null) {
+                mExecutorService.shutdownNow();
+            }
 
             mFileTasks.clear();
         }
