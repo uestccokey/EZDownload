@@ -8,11 +8,14 @@ import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import static cn.ezandroid.ezdownload.DownloadFileRequest.TaskStatus.CANCELED;
-import static cn.ezandroid.ezdownload.DownloadFileRequest.TaskStatus.COMPLETED;
-import static cn.ezandroid.ezdownload.DownloadFileRequest.TaskStatus.FAILED;
+import static cn.ezandroid.ezdownload.DownloadStatus.CANCELED;
+import static cn.ezandroid.ezdownload.DownloadStatus.COMPLETED;
+import static cn.ezandroid.ezdownload.DownloadStatus.DOWNLOADING;
+import static cn.ezandroid.ezdownload.DownloadStatus.FAILED;
+import static cn.ezandroid.ezdownload.DownloadStatus.READY;
 import static cn.ezandroid.ezdownload.HttpState.HTTP_STATE_SC_OK;
 import static cn.ezandroid.ezdownload.HttpState.HTTP_STATE_SC_PARTIAL_CONTENT;
+import static cn.ezandroid.ezdownload.HttpState.HTTP_STATE_SC_REQUESTED_RANGE_NOT_SATISFIABLE;
 
 /**
  * 下载（分片）文件
@@ -32,10 +35,17 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
         this.mDownloadFileRequest = request;
     }
 
+    public DownloadFileTask copy() throws CloneNotSupportedException {
+        DownloadFileTask downloadFileTask = new DownloadFileTask(mDownloadFileRequest.clone());
+        downloadFileTask.setProgressUpdateListener(mProgressUpdateListener);
+        downloadFileTask.setCompleteListener(mCompleteListener);
+        return downloadFileTask;
+    }
+
     @Override
     protected void onPreExecute() {
         super.onPreExecute();
-        onTaskStatusChanged(DownloadFileRequest.TaskStatus.READY);
+        onTaskStatusChanged(READY);
     }
 
     @Override
@@ -55,37 +65,43 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
             URL url = new URL(mDownloadFileRequest.getUrl());
             connection = (HttpURLConnection) url.openConnection();
             connection.setDoInput(true);
+            connection.setConnectTimeout(20000);
             connection.setReadTimeout(20000);
             connection.setRequestProperty("Accept", "*, */*");
             connection.setRequestProperty("accept-charset", "utf-8");
-            connection.setRequestProperty("Range", "bytes=" + mDownloadFileRequest.getStartPosition() + "-" + mDownloadFileRequest.getEndPosition());
+            connection.setRequestProperty("Range", "bytes=" + (mDownloadFileRequest.getStartPosition() + mDownloadFileRequest.getCurrentLength()) +
+                    "-" + mDownloadFileRequest.getEndPosition());
             connection.setRequestMethod("GET");
 
             int code = connection.getResponseCode();
-            Log.e("DownloadFileTask", "onConnected:" + code + " " + mDownloadFileRequest.getUrl() +
-                    " from " + mDownloadFileRequest.getStartPosition() + " to " + mDownloadFileRequest.getEndPosition());
-            if (code == HTTP_STATE_SC_OK || code == HTTP_STATE_SC_PARTIAL_CONTENT) {
-                onTaskStatusChanged(DownloadFileRequest.TaskStatus.DOWNLOADING);
+            Log.e("DownloadFileTask", "onConnected:" + code + " " + mDownloadFileRequest.getUrl() + " " + mDownloadFileRequest.toString());
+            if (code == HTTP_STATE_SC_OK || code == HTTP_STATE_SC_PARTIAL_CONTENT || code == HTTP_STATE_SC_REQUESTED_RANGE_NOT_SATISFIABLE) {
+                onTaskStatusChanged(DOWNLOADING);
 
                 RandomAccessFile randomAccessFile = null;
                 InputStream inputStream = null;
                 try {
                     randomAccessFile = new RandomAccessFile(mDownloadFileRequest.getPath(), "rwd");
-                    randomAccessFile.seek(mDownloadFileRequest.getStartPosition());
+                    randomAccessFile.seek(mDownloadFileRequest.getStartPosition() + mDownloadFileRequest.getCurrentLength());
 
                     inputStream = connection.getInputStream();
                     int length;
-                    int currentLength = 0;
+                    long currentLength = mDownloadFileRequest.getCurrentLength();
                     mContentLength = connection.getContentLength();
 
                     byte[] buffer = new byte[1024 * 1000];
                     while ((length = inputStream.read(buffer)) != -1) {
-                        currentLength += length;
-                        if (mContentLength > 0) {
-                            publishProgress(((float) currentLength / mContentLength * 100),
-                                    ((float) currentLength / mDownloadFileRequest.getTotalContentLength() * 100));
+                        if (!isCancelled()) {
+                            currentLength += length;
+                            if (mContentLength > 0) {
+                                publishProgress(((float) currentLength / mContentLength * 100),
+                                        ((float) currentLength / mDownloadFileRequest.getTotalContentLength() * 100));
+                            }
+                            randomAccessFile.write(buffer, 0, length);
+                            mDownloadFileRequest.setCurrentLength(currentLength);
+                        } else {
+                            break;
                         }
-                        randomAccessFile.write(buffer, 0, length);
                     }
                 } finally {
                     if (randomAccessFile != null) {
@@ -122,14 +138,12 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
         if (mDownloadFileRequest.getStatus() != CANCELED
                 && mDownloadFileRequest.getStatus() != FAILED) {
             onTaskStatusChanged(COMPLETED);
-            Log.e("DownloadFileTask", "onCompleted:" + mDownloadFileRequest.getUrl() +
-                    " from " + mDownloadFileRequest.getStartPosition() + " to " + mDownloadFileRequest.getEndPosition());
+            Log.e("DownloadFileTask", "onCompleted:" + mDownloadFileRequest.getUrl() + " " + mDownloadFileRequest.toString());
             if (mCompleteListener != null) {
                 mCompleteListener.onCompleted(mDownloadFileRequest.getUrl(), mContentLength);
             }
         } else {
-            Log.e("DownloadFileTask", "onFailed:" + mDownloadFileRequest.getUrl() +
-                    " from " + mDownloadFileRequest.getStartPosition() + " to " + mDownloadFileRequest.getEndPosition());
+            Log.e("DownloadFileTask", "onFailed:" + mDownloadFileRequest.getUrl() + " " + mDownloadFileRequest.toString());
             if (mCompleteListener != null) {
                 mCompleteListener.onFailed();
             }
@@ -142,7 +156,7 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
         onTaskStatusChanged(CANCELED);
     }
 
-    private void onTaskStatusChanged(DownloadFileRequest.TaskStatus taskStatus) {
+    private void onTaskStatusChanged(DownloadStatus taskStatus) {
         mDownloadFileRequest.setStatus(taskStatus);
         switch (taskStatus) {
             case CANCELED:

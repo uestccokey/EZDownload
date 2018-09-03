@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static cn.ezandroid.ezdownload.DownloadFileRequest.TaskStatus.COMPLETED;
+import static cn.ezandroid.ezdownload.DownloadStatus.COMPLETED;
 
 /**
  * EZDownload
@@ -18,11 +18,11 @@ public class EZDownload {
     private EZDownload() {
     }
 
-    public static Builder request(String url) {
-        return new Builder().setUrl(url);
+    public static Downloader download(String url) {
+        return new Downloader().setUrl(url);
     }
 
-    public static class Builder {
+    public static class Downloader {
 
         private String mUrl;
         private String mPath;
@@ -33,30 +33,39 @@ public class EZDownload {
 
         private List<DownloadFileTask> mFileTasks = new ArrayList<>();
 
-        private Builder() {
+        private ExecutorService mExecutorService;
+
+        private DownloadStatus mStatus = DownloadStatus.WAITING;
+
+        private Downloader() {
         }
 
-        public Builder setUrl(String url) {
+        public Downloader setUrl(String url) {
             mUrl = url;
             return this;
         }
 
-        public Builder setPath(String path) {
+        public Downloader setPath(String path) {
             mPath = path;
             return this;
         }
 
-        public Builder setThreadCount(int threadCount) {
+        public Downloader setThreadCount(int threadCount) {
             mThreadCount = threadCount;
             return this;
         }
 
-        public Builder setDownloadListener(IDownloadListener downloadListener) {
+        public Downloader setDownloadListener(IDownloadListener downloadListener) {
             mDownloadListener = downloadListener;
             return this;
         }
 
-        private float getDownloadProgress() {
+        /**
+         * 获取下载进度
+         *
+         * @return
+         */
+        public float getDownloadProgress() {
             float progress = 0;
             for (DownloadFileTask task : mFileTasks) {
                 progress += task.getDownloadFileRequest().getProgress();
@@ -64,7 +73,21 @@ public class EZDownload {
             return progress;
         }
 
-        private boolean isDownloadCompleted() {
+        /**
+         * 获取下载状态
+         *
+         * @return
+         */
+        public DownloadStatus getDownloadStatus() {
+            return mStatus;
+        }
+
+        /**
+         * 是否已下载完成
+         *
+         * @return
+         */
+        public boolean isDownloadCompleted() {
             boolean isCompleted = true;
             for (DownloadFileTask task : mFileTasks) {
                 if (task.getDownloadFileRequest().getStatus() != COMPLETED) {
@@ -75,11 +98,23 @@ public class EZDownload {
             return isCompleted;
         }
 
-        public void download() {
+        /**
+         * 开始下载
+         *
+         * @return
+         */
+        public Downloader start() {
+            if (mExecutorService == null || mExecutorService.isShutdown()) {
+                mExecutorService = Executors.newFixedThreadPool(Math.max(mThreadCount, 1));
+            }
+
+            mStatus = DownloadStatus.READY;
+
             DownloadSizeTask downloadSizeTask = new DownloadSizeTask();
             downloadSizeTask.setOnCompleteListener(new OnCompleteListener() {
                 @Override
                 public void onFailed() {
+                    mStatus = DownloadStatus.FAILED;
                     if (mDownloadListener != null) {
                         mDownloadListener.onFailed();
                     }
@@ -87,6 +122,7 @@ public class EZDownload {
 
                 @Override
                 public void onCompleted(String url, int contentLength) {
+                    mStatus = DownloadStatus.DOWNLOADING;
                     long blockSize = (int) Math.ceil((float) contentLength / mThreadCount);
 
                     for (int position = 0; position < mThreadCount; position++) {
@@ -104,6 +140,7 @@ public class EZDownload {
                         downloadFileTask.setCompleteListener(new OnCompleteListener() {
                             @Override
                             public void onFailed() {
+                                mStatus = DownloadStatus.FAILED;
                                 if (mDownloadListener != null) {
                                     mDownloadListener.onFailed();
                                 }
@@ -112,19 +149,74 @@ public class EZDownload {
                             @Override
                             public void onCompleted(String url, int contentLength) {
                                 if (isDownloadCompleted()) {
+                                    mStatus = DownloadStatus.COMPLETED;
                                     if (mDownloadListener != null) {
                                         mDownloadListener.onCompleted();
                                     }
                                 }
                             }
                         });
-                        ExecutorService executorService = Executors.newFixedThreadPool(mThreadCount);
-                        downloadFileTask.executeOnExecutor(executorService);
+                        downloadFileTask.executeOnExecutor(mExecutorService);
                         mFileTasks.add(downloadFileTask);
                     }
                 }
             });
             downloadSizeTask.execute(mUrl);
+            return this;
+        }
+
+        /**
+         * 恢复下载
+         */
+        public void resume() {
+            if (mFileTasks.isEmpty()) {
+                start();
+            } else {
+                if (mExecutorService == null || mExecutorService.isShutdown()) {
+                    mExecutorService = Executors.newFixedThreadPool(Math.max(mThreadCount, 1));
+                }
+
+                mStatus = DownloadStatus.DOWNLOADING;
+                try {
+                    List<DownloadFileTask> copyTasks = new ArrayList<>();
+                    for (DownloadFileTask task : mFileTasks) {
+                        copyTasks.add(task.copy());
+                    }
+                    mFileTasks = copyTasks;
+
+                    for (DownloadFileTask task : mFileTasks) {
+                        task.executeOnExecutor(mExecutorService);
+                    }
+                } catch (CloneNotSupportedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        /**
+         * 暂停下载
+         */
+        public void pause() {
+            mStatus = DownloadStatus.CANCELED;
+            for (DownloadFileTask task : mFileTasks) {
+                task.cancel(true);
+            }
+
+            mExecutorService.shutdownNow();
+        }
+
+        /**
+         * 销毁下载器
+         */
+        public void destroy() {
+            mStatus = DownloadStatus.WAITING;
+            for (DownloadFileTask task : mFileTasks) {
+                task.cancel(true);
+            }
+
+            mExecutorService.shutdownNow();
+
+            mFileTasks.clear();
         }
     }
 }

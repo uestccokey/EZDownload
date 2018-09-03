@@ -8,20 +8,11 @@ import java.io.Serializable;
  * @author like
  * @date 2018-09-03
  */
-public class DownloadFileRequest implements Serializable {
+public class DownloadFileRequest implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 42L;
 
     private final static int MAX_RETRY_NUM = 3;
-
-    public enum TaskStatus {
-        WAITING,
-        READY,
-        DOWNLOADING,
-        CANCELED,
-        FAILED,
-        COMPLETED
-    }
 
     private long mTotalContentLength;
     private long mBlockSize;
@@ -30,9 +21,11 @@ public class DownloadFileRequest implements Serializable {
     private long mStartPosition;
     private long mEndPosition;
 
+    private long mCurrentLength;
+
     private float mProgress = 0;
     private int mRetryCount = 0;
-    private TaskStatus mStatus = TaskStatus.WAITING;
+    private DownloadStatus mStatus = DownloadStatus.WAITING;
 
     private String mUrl;
     private String mPath;
@@ -50,13 +43,15 @@ public class DownloadFileRequest implements Serializable {
     }
 
     @Override
+    protected DownloadFileRequest clone() throws CloneNotSupportedException {
+        return (DownloadFileRequest) super.clone();
+    }
+
+    @Override
     public String toString() {
-        return "DownloadFileRequest{" +
-                "mStartPosition=" + mStartPosition +
-                ", mEndPosition=" + mEndPosition +
-                ", mStatus=" + mStatus +
-                ", mUrl='" + mUrl + '\'' +
-                '}';
+        return "from " + mStartPosition +
+                " to " + mEndPosition +
+                " > " + mCurrentLength;
     }
 
     public void addRetryCount() {
@@ -66,7 +61,15 @@ public class DownloadFileRequest implements Serializable {
     }
 
     public boolean shouldRetry() {
-        return mRetryCount < MAX_RETRY_NUM ? true : false;
+        return mRetryCount < MAX_RETRY_NUM;
+    }
+
+    public void setCurrentLength(long currentLength) {
+        mCurrentLength = currentLength;
+    }
+
+    public long getCurrentLength() {
+        return mCurrentLength;
     }
 
     public String getUrl() {
@@ -133,11 +136,11 @@ public class DownloadFileRequest implements Serializable {
         this.mProgress = progress;
     }
 
-    public TaskStatus getStatus() {
+    public DownloadStatus getStatus() {
         return mStatus;
     }
 
-    public void setStatus(TaskStatus status) {
+    public void setStatus(DownloadStatus status) {
         this.mStatus = status;
     }
 }
