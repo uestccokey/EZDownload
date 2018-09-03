@@ -25,7 +25,7 @@ public class DownloadFileRequest implements Serializable, Cloneable {
 
     private float mProgress = 0;
     private int mRetryCount = 0;
-    private DownloadStatus mStatus = DownloadStatus.WAITING;
+    private DownloadStatus mStatus = DownloadStatus.IDLE;
 
     private String mUrl;
     private String mPath;

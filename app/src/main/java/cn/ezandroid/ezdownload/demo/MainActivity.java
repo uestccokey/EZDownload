@@ -63,8 +63,7 @@ public class MainActivity extends AppCompatActivity {
                             mDownloadButton.setText("暂停");
                         } else {
                             switch (mDownloader.getDownloadStatus()) {
-                                case FAILED:
-                                case CANCELED:
+                                case SUSPEND:
                                     mDownloader.resume();
                                     mDownloadButton.setText("暂停");
                                     break;

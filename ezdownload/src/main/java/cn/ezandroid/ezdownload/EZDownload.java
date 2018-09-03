@@ -35,7 +35,7 @@ public class EZDownload {
 
         private ExecutorService mExecutorService;
 
-        private DownloadStatus mStatus = DownloadStatus.WAITING;
+        private DownloadStatus mStatus = DownloadStatus.IDLE;
 
         private Downloader() {
         }
@@ -108,13 +108,11 @@ public class EZDownload {
                 mExecutorService = Executors.newFixedThreadPool(Math.max(mThreadCount, 1));
             }
 
-            mStatus = DownloadStatus.READY;
-
             DownloadSizeTask downloadSizeTask = new DownloadSizeTask();
             downloadSizeTask.setOnCompleteListener(new OnCompleteListener() {
                 @Override
                 public void onFailed() {
-                    mStatus = DownloadStatus.FAILED;
+                    mStatus = DownloadStatus.SUSPEND;
                     if (mDownloadListener != null) {
                         mDownloadListener.onFailed();
                     }
@@ -140,7 +138,7 @@ public class EZDownload {
                         downloadFileTask.setCompleteListener(new OnCompleteListener() {
                             @Override
                             public void onFailed() {
-                                mStatus = DownloadStatus.FAILED;
+                                mStatus = DownloadStatus.SUSPEND;
                                 if (mDownloadListener != null) {
                                     mDownloadListener.onFailed();
                                 }
@@ -197,7 +195,7 @@ public class EZDownload {
          * 暂停下载
          */
         public void pause() {
-            mStatus = DownloadStatus.CANCELED;
+            mStatus = DownloadStatus.SUSPEND;
             for (DownloadFileTask task : mFileTasks) {
                 task.cancel(true);
             }
@@ -209,7 +207,7 @@ public class EZDownload {
          * 销毁下载器
          */
         public void destroy() {
-            mStatus = DownloadStatus.WAITING;
+            mStatus = DownloadStatus.IDLE;
             for (DownloadFileTask task : mFileTasks) {
                 task.cancel(true);
             }

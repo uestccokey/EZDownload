@@ -8,11 +8,9 @@ import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import static cn.ezandroid.ezdownload.DownloadStatus.CANCELED;
 import static cn.ezandroid.ezdownload.DownloadStatus.COMPLETED;
 import static cn.ezandroid.ezdownload.DownloadStatus.DOWNLOADING;
-import static cn.ezandroid.ezdownload.DownloadStatus.FAILED;
-import static cn.ezandroid.ezdownload.DownloadStatus.READY;
+import static cn.ezandroid.ezdownload.DownloadStatus.SUSPEND;
 import static cn.ezandroid.ezdownload.HttpState.HTTP_STATE_SC_OK;
 import static cn.ezandroid.ezdownload.HttpState.HTTP_STATE_SC_PARTIAL_CONTENT;
 import static cn.ezandroid.ezdownload.HttpState.HTTP_STATE_SC_REQUESTED_RANGE_NOT_SATISFIABLE;
@@ -43,12 +41,6 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
     }
 
     @Override
-    protected void onPreExecute() {
-        super.onPreExecute();
-        onTaskStatusChanged(READY);
-    }
-
-    @Override
     protected Object doInBackground(String... strings) {
         startDownload();
         return null;
@@ -75,7 +67,7 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
 
             int code = connection.getResponseCode();
             Log.e("DownloadFileTask", "onConnected:" + code + " " + mDownloadFileRequest.getUrl() + " " + mDownloadFileRequest.toString());
-            if (code == HTTP_STATE_SC_OK || code == HTTP_STATE_SC_PARTIAL_CONTENT || code == HTTP_STATE_SC_REQUESTED_RANGE_NOT_SATISFIABLE) {
+            if (code == HTTP_STATE_SC_OK || code == HTTP_STATE_SC_PARTIAL_CONTENT) {
                 onTaskStatusChanged(DOWNLOADING);
 
                 RandomAccessFile randomAccessFile = null;
@@ -111,11 +103,13 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
                         inputStream.close();
                     }
                 }
+            } else if (code == HTTP_STATE_SC_REQUESTED_RANGE_NOT_SATISFIABLE) {
+                // 只会在分段下载完成后，但程序再次请求时出现
             } else {
-                onTaskStatusChanged(FAILED);
+                onTaskStatusChanged(SUSPEND);
             }
         } catch (Exception e) {
-            onTaskStatusChanged(FAILED);
+            onTaskStatusChanged(SUSPEND);
             e.printStackTrace();
         } finally {
             if (connection != null) {
@@ -135,8 +129,7 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
     @Override
     protected void onPostExecute(Object object) {
         super.onPostExecute(object);
-        if (mDownloadFileRequest.getStatus() != CANCELED
-                && mDownloadFileRequest.getStatus() != FAILED) {
+        if (mDownloadFileRequest.getStatus() != SUSPEND) {
             onTaskStatusChanged(COMPLETED);
             Log.e("DownloadFileTask", "onCompleted:" + mDownloadFileRequest.getUrl() + " " + mDownloadFileRequest.toString());
             if (mCompleteListener != null) {
@@ -153,14 +146,13 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
     @Override
     protected void onCancelled() {
         super.onCancelled();
-        onTaskStatusChanged(CANCELED);
+        onTaskStatusChanged(SUSPEND);
     }
 
     private void onTaskStatusChanged(DownloadStatus taskStatus) {
         mDownloadFileRequest.setStatus(taskStatus);
         switch (taskStatus) {
-            case CANCELED:
-            case FAILED:
+            case SUSPEND:
                 mDownloadFileRequest.addRetryCount();
                 if (mDownloadFileRequest.shouldRetry()) {
                     startDownload();

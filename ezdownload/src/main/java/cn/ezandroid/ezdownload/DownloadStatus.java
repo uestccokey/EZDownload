@@ -7,10 +7,8 @@ package cn.ezandroid.ezdownload;
  * @date 2018-09-03
  */
 public enum DownloadStatus {
-    WAITING,
-    READY,
-    DOWNLOADING,
-    CANCELED,
-    FAILED,
-    COMPLETED
+    IDLE, // 空闲状态
+    DOWNLOADING, // 正在下载
+    SUSPEND, // 下载已挂起（暂停或失败）
+    COMPLETED // 下载已完成
 }
