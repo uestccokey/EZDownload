@@ -86,7 +86,7 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
                     long currentLength = mDownloadFileRequest.getCurrentLength();
                     mContentLength = connection.getContentLength();
 
-                    byte[] buffer = new byte[1024 * 1000];
+                    byte[] buffer = new byte[1024 * 1024];
                     while ((length = inputStream.read(buffer)) != -1) {
                         if (isCancelled()) {
                             return;
@@ -94,8 +94,10 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
 
                         currentLength += length;
                         if (mContentLength > 0) {
-                            publishProgress(((float) currentLength / mContentLength * 100),
-                                    ((float) currentLength / mDownloadFileRequest.getTotalContentLength() * 100));
+                            float blockProgress = currentLength / 100f / mContentLength;
+                            float totalProgress = currentLength / 100f / mDownloadFileRequest.getTotalContentLength();
+                            mDownloadFileRequest.setProgress(totalProgress);
+                            publishProgress(blockProgress, totalProgress);
                         }
                         randomAccessFile.write(buffer, 0, length);
                         mDownloadFileRequest.setCurrentLength(currentLength);

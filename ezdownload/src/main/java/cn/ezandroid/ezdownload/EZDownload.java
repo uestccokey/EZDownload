@@ -108,8 +108,8 @@ public class EZDownload {
                 mExecutorService = Executors.newFixedThreadPool(mThreadCount);
             }
 
-            DownloadSizeTask downloadSizeTask = new DownloadSizeTask();
-            downloadSizeTask.setOnCompleteListener(new OnCompleteListener() {
+            DownloadInfoTask downloadInfoTask = new DownloadInfoTask();
+            downloadInfoTask.setOnCompleteListener(new OnCompleteListener() {
                 @Override
                 public void onSuspend() {
                     mStatus = DownloadStatus.SUSPEND;
@@ -123,16 +123,12 @@ public class EZDownload {
                     mStatus = DownloadStatus.DOWNLOADING;
                     long blockSize = (int) Math.ceil((float) contentLength / mThreadCount);
 
-                    for (int position = 0; position < mThreadCount; position++) {
+                    for (int i = 0; i < mThreadCount; i++) {
                         DownloadFileTask downloadFileTask
-                                = new DownloadFileTask(new DownloadFileRequest(url, mPath, contentLength, blockSize, position));
-                        downloadFileTask.setProgressUpdateListener(new OnProgressUpdateListener() {
-                            @Override
-                            public void onProgressUpdated(int position, float subProgress, float totalProgress) {
-                                mFileTasks.get(position).getDownloadFileRequest().setProgress(totalProgress);
-                                if (mDownloadListener != null) {
-                                    mDownloadListener.onProgressUpdated(getDownloadProgress());
-                                }
+                                = new DownloadFileTask(new DownloadFileRequest(url, mPath, contentLength, blockSize, i));
+                        downloadFileTask.setProgressUpdateListener((position, subProgress, totalProgress) -> {
+                            if (mDownloadListener != null) {
+                                mDownloadListener.onProgressUpdated(getDownloadProgress());
                             }
                         });
                         downloadFileTask.setCompleteListener(new OnCompleteListener() {
@@ -159,7 +155,7 @@ public class EZDownload {
                     }
                 }
             });
-            downloadSizeTask.execute(mUrl);
+            downloadInfoTask.execute(mUrl);
             return this;
         }
 

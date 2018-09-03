@@ -18,7 +18,7 @@ import static cn.ezandroid.ezdownload.HttpState.HTTP_STATE_SC_REDIRECT;
  * @author like
  * @date 2018-09-03
  */
-public class DownloadSizeTask extends AsyncTask<String, Integer, Object> {
+public class DownloadInfoTask extends AsyncTask<String, Integer, Object> {
 
     private static final int MAX_REDIRECT_COUNT = 3; // 最大重定向次数
 
@@ -40,9 +40,9 @@ public class DownloadSizeTask extends AsyncTask<String, Integer, Object> {
             connection.setRequestMethod("GET");
 
             int code = connection.getResponseCode();
-            Log.e("DownloadSizeTask", "onConnected:" + code + " " + params[0]);
+            Log.e("DownloadInfoTask", "onConnected:" + code + " " + params[0]);
             if (code == HTTP_STATE_SC_OK) {
-                Log.e("DownloadSizeTask", "Total size:" + connection.getContentLength());
+                Log.e("DownloadInfoTask", "Total size:" + connection.getContentLength());
                 if (mCompleteListener != null) {
                     mCompleteListener.onCompleted(params[0], connection.getContentLength());
                 }
@@ -50,7 +50,7 @@ public class DownloadSizeTask extends AsyncTask<String, Integer, Object> {
                 // 处理重定向
                 mRedirectCount++;
                 String location = connection.getHeaderField("Location");
-                Log.e("DownloadSizeTask", "Redirect url:" + location);
+                Log.e("DownloadInfoTask", "Redirect url:" + location);
                 if (TextUtils.isEmpty(location) || mRedirectCount > MAX_REDIRECT_COUNT) {
                     if (mCompleteListener != null) {
                         mCompleteListener.onSuspend();
@@ -64,6 +64,9 @@ public class DownloadSizeTask extends AsyncTask<String, Integer, Object> {
                 }
             }
         } catch (Exception e) {
+            if (mCompleteListener != null) {
+                mCompleteListener.onSuspend();
+            }
             e.printStackTrace();
         } finally {
             if (connection != null) {
