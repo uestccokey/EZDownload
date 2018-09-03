@@ -1,7 +1,5 @@
 package cn.ezandroid.ezdownload;
 
-import android.util.Log;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -82,7 +80,6 @@ public class EZDownload {
             downloadSizeTask.setOnCompleteListener(new OnCompleteListener() {
                 @Override
                 public void onFailed() {
-                    Log.e("DownloadSizeTask", "DownloadSizeTask fail!");
                     if (mDownloadListener != null) {
                         mDownloadListener.onFailed();
                     }
@@ -107,7 +104,6 @@ public class EZDownload {
                         downloadFileTask.setCompleteListener(new OnCompleteListener() {
                             @Override
                             public void onFailed() {
-                                Log.e("DownloadSizeTask", "DownloadFileTask fail!");
                                 if (mDownloadListener != null) {
                                     mDownloadListener.onFailed();
                                 }

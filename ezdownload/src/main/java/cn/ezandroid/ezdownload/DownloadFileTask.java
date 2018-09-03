@@ -52,8 +52,6 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
     private void startDownload() {
         HttpURLConnection connection = null;
         try {
-            Log.e("DownloadSizeTask", "Download:" + mDownloadFileRequest.getUrl() +
-                    " from " + mDownloadFileRequest.getStartPosition() + " to " + mDownloadFileRequest.getEndPosition());
             URL url = new URL(mDownloadFileRequest.getUrl());
             connection = (HttpURLConnection) url.openConnection();
             connection.setDoInput(true);
@@ -64,7 +62,8 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
             connection.setRequestMethod("GET");
 
             int code = connection.getResponseCode();
-            Log.e("DownloadFileTask", "code:" + code);
+            Log.e("DownloadFileTask", "onConnected:" + code + " " + mDownloadFileRequest.getUrl() +
+                    " from " + mDownloadFileRequest.getStartPosition() + " to " + mDownloadFileRequest.getEndPosition());
             if (code == HTTP_STATE_SC_OK || code == HTTP_STATE_SC_PARTIAL_CONTENT) {
                 onTaskStatusChanged(DownloadFileRequest.TaskStatus.DOWNLOADING);
 
@@ -123,13 +122,13 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
         if (mDownloadFileRequest.getStatus() != CANCELED
                 && mDownloadFileRequest.getStatus() != FAILED) {
             onTaskStatusChanged(COMPLETED);
-            Log.e("DownloadSizeTask", "onCompleted:" + mDownloadFileRequest.getUrl() +
+            Log.e("DownloadFileTask", "onCompleted:" + mDownloadFileRequest.getUrl() +
                     " from " + mDownloadFileRequest.getStartPosition() + " to " + mDownloadFileRequest.getEndPosition());
             if (mCompleteListener != null) {
                 mCompleteListener.onCompleted(mDownloadFileRequest.getUrl(), mContentLength);
             }
         } else {
-            Log.e("DownloadSizeTask", "onFailed:" + mDownloadFileRequest.getUrl() +
+            Log.e("DownloadFileTask", "onFailed:" + mDownloadFileRequest.getUrl() +
                     " from " + mDownloadFileRequest.getStartPosition() + " to " + mDownloadFileRequest.getEndPosition());
             if (mCompleteListener != null) {
                 mCompleteListener.onFailed();

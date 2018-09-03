@@ -30,7 +30,6 @@ public class DownloadSizeTask extends AsyncTask<String, Integer, Object> {
     protected Object doInBackground(String... params) {
         HttpURLConnection connection = null;
         try {
-            Log.e("DownloadSizeTask", "Request:" + params[0]);
             URL url = new URL(params[0]);
             connection = (HttpURLConnection) url.openConnection();
             connection.setDoInput(true);
@@ -41,7 +40,7 @@ public class DownloadSizeTask extends AsyncTask<String, Integer, Object> {
             connection.setRequestMethod("GET");
 
             int code = connection.getResponseCode();
-            Log.e("DownloadSizeTask", "code:" + code);
+            Log.e("DownloadSizeTask", "onConnected:" + code + " " + params[0]);
             if (code == HTTP_STATE_SC_OK) {
                 Log.e("DownloadSizeTask", "Total size:" + connection.getContentLength());
                 if (mCompleteListener != null) {
