@@ -23,8 +23,8 @@ import static cn.ezandroid.ezdownload.HttpState.HTTP_STATE_SC_PARTIAL_CONTENT;
 public class DownloadFileTask extends AsyncTask<String, Float, Object> {
 
     private DownloadFileRequest mDownloadFileRequest;
-    private OnInternalProgressUpdateListener mProgressUpdateListener;
-    private OnInternalCompleteListener mCompleteListener;
+    private OnProgressUpdateListener mProgressUpdateListener;
+    private OnCompleteListener mCompleteListener;
 
     private int mContentLength;
 
@@ -44,9 +44,16 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
         return null;
     }
 
+    @Override
+    public String toString() {
+        return mDownloadFileRequest.toString();
+    }
+
     private void startDownload() {
         HttpURLConnection connection = null;
         try {
+            Log.e("DownloadSizeTask", "Download:" + mDownloadFileRequest.getUrl() +
+                    " from " + mDownloadFileRequest.getStartPosition() + " to " + mDownloadFileRequest.getEndPosition());
             URL url = new URL(mDownloadFileRequest.getUrl());
             connection = (HttpURLConnection) url.openConnection();
             connection.setDoInput(true);
@@ -57,7 +64,7 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
             connection.setRequestMethod("GET");
 
             int code = connection.getResponseCode();
-            Log.d("DownloadFileTask", "code:" + code + " msg:" + connection.getResponseMessage());
+            Log.e("DownloadFileTask", "code:" + code);
             if (code == HTTP_STATE_SC_OK || code == HTTP_STATE_SC_PARTIAL_CONTENT) {
                 onTaskStatusChanged(DownloadFileRequest.TaskStatus.DOWNLOADING);
 
@@ -71,7 +78,6 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
                     int length;
                     int currentLength = 0;
                     mContentLength = connection.getContentLength();
-                    Log.d("DownloadFileTask", "ContentLength:" + mContentLength);
 
                     byte[] buffer = new byte[1024 * 1000];
                     while ((length = inputStream.read(buffer)) != -1) {
@@ -117,10 +123,14 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
         if (mDownloadFileRequest.getStatus() != CANCELED
                 && mDownloadFileRequest.getStatus() != FAILED) {
             onTaskStatusChanged(COMPLETED);
+            Log.e("DownloadSizeTask", "onCompleted:" + mDownloadFileRequest.getUrl() +
+                    " from " + mDownloadFileRequest.getStartPosition() + " to " + mDownloadFileRequest.getEndPosition());
             if (mCompleteListener != null) {
                 mCompleteListener.onCompleted(mDownloadFileRequest.getUrl(), mContentLength);
             }
         } else {
+            Log.e("DownloadSizeTask", "onFailed:" + mDownloadFileRequest.getUrl() +
+                    " from " + mDownloadFileRequest.getStartPosition() + " to " + mDownloadFileRequest.getEndPosition());
             if (mCompleteListener != null) {
                 mCompleteListener.onFailed();
             }
@@ -152,11 +162,11 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
         return mDownloadFileRequest;
     }
 
-    public void setProgressUpdateListener(OnInternalProgressUpdateListener progressUpdateListener) {
+    public void setProgressUpdateListener(OnProgressUpdateListener progressUpdateListener) {
         this.mProgressUpdateListener = progressUpdateListener;
     }
 
-    public void setCompleteListener(OnInternalCompleteListener completeListener) {
+    public void setCompleteListener(OnCompleteListener completeListener) {
         this.mCompleteListener = completeListener;
     }
 }

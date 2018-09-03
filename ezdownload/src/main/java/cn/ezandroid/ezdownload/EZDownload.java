@@ -1,5 +1,7 @@
 package cn.ezandroid.ezdownload;
 
+import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -19,7 +21,7 @@ public class EZDownload {
     }
 
     public static Builder request(String url) {
-        return new Builder().setPath(url);
+        return new Builder().setUrl(url);
     }
 
     public static class Builder {
@@ -29,8 +31,7 @@ public class EZDownload {
 
         private int mThreadCount = Runtime.getRuntime().availableProcessors(); // 默认为手机核数
 
-        private OnCompleteListener mCompleteListener;
-        private OnProgressUpdateListener mProgressUpdateListener;
+        private IDownloadListener mDownloadListener;
 
         private List<DownloadFileTask> mFileTasks = new ArrayList<>();
 
@@ -52,13 +53,8 @@ public class EZDownload {
             return this;
         }
 
-        public Builder setCompleteListener(OnCompleteListener completeListener) {
-            mCompleteListener = completeListener;
-            return this;
-        }
-
-        public Builder setProgressUpdateListener(OnProgressUpdateListener progressUpdateListener) {
-            mProgressUpdateListener = progressUpdateListener;
+        public Builder setDownloadListener(IDownloadListener downloadListener) {
+            mDownloadListener = downloadListener;
             return this;
         }
 
@@ -83,11 +79,12 @@ public class EZDownload {
 
         public void download() {
             DownloadSizeTask downloadSizeTask = new DownloadSizeTask();
-            downloadSizeTask.setOnCompleteListener(new OnInternalCompleteListener() {
+            downloadSizeTask.setOnCompleteListener(new OnCompleteListener() {
                 @Override
                 public void onFailed() {
-                    if (mCompleteListener != null) {
-                        mCompleteListener.onFailed();
+                    Log.e("DownloadSizeTask", "DownloadSizeTask fail!");
+                    if (mDownloadListener != null) {
+                        mDownloadListener.onFailed();
                     }
                 }
 
@@ -98,28 +95,29 @@ public class EZDownload {
                     for (int position = 0; position < mThreadCount; position++) {
                         DownloadFileTask downloadFileTask
                                 = new DownloadFileTask(new DownloadFileRequest(url, mPath, contentLength, blockSize, position));
-                        downloadFileTask.setProgressUpdateListener(new OnInternalProgressUpdateListener() {
+                        downloadFileTask.setProgressUpdateListener(new OnProgressUpdateListener() {
                             @Override
                             public void onProgressUpdated(int position, float subProgress, float totalProgress) {
                                 mFileTasks.get(position).getDownloadFileRequest().setProgress(totalProgress);
-                                if (mProgressUpdateListener != null) {
-                                    mProgressUpdateListener.onProgressUpdated(getDownloadProgress());
+                                if (mDownloadListener != null) {
+                                    mDownloadListener.onProgressUpdated(getDownloadProgress());
                                 }
                             }
                         });
-                        downloadFileTask.setCompleteListener(new OnInternalCompleteListener() {
+                        downloadFileTask.setCompleteListener(new OnCompleteListener() {
                             @Override
                             public void onFailed() {
-                                if (mCompleteListener != null) {
-                                    mCompleteListener.onFailed();
+                                Log.e("DownloadSizeTask", "DownloadFileTask fail!");
+                                if (mDownloadListener != null) {
+                                    mDownloadListener.onFailed();
                                 }
                             }
 
                             @Override
                             public void onCompleted(String url, int contentLength) {
                                 if (isDownloadCompleted()) {
-                                    if (mCompleteListener != null) {
-                                        mCompleteListener.onCompleted();
+                                    if (mDownloadListener != null) {
+                                        mDownloadListener.onCompleted();
                                     }
                                 }
                             }

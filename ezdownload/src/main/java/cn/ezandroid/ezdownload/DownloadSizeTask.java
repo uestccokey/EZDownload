@@ -24,12 +24,13 @@ public class DownloadSizeTask extends AsyncTask<String, Integer, Object> {
 
     private int mRedirectCount;
 
-    private OnInternalCompleteListener mCompleteListener;
+    private OnCompleteListener mCompleteListener;
 
     @Override
     protected Object doInBackground(String... params) {
         HttpURLConnection connection = null;
         try {
+            Log.e("DownloadSizeTask", "Request:" + params[0]);
             URL url = new URL(params[0]);
             connection = (HttpURLConnection) url.openConnection();
             connection.setDoInput(true);
@@ -40,8 +41,9 @@ public class DownloadSizeTask extends AsyncTask<String, Integer, Object> {
             connection.setRequestMethod("GET");
 
             int code = connection.getResponseCode();
-            Log.d("DownloadSizeTask", "code:" + code + " msg:" + connection.getResponseMessage());
+            Log.e("DownloadSizeTask", "code:" + code);
             if (code == HTTP_STATE_SC_OK) {
+                Log.e("DownloadSizeTask", "Total size:" + connection.getContentLength());
                 if (mCompleteListener != null) {
                     mCompleteListener.onCompleted(params[0], connection.getContentLength());
                 }
@@ -49,6 +51,7 @@ public class DownloadSizeTask extends AsyncTask<String, Integer, Object> {
                 // 处理重定向
                 mRedirectCount++;
                 String location = connection.getHeaderField("Location");
+                Log.e("DownloadSizeTask", "Redirect url:" + location);
                 if (TextUtils.isEmpty(location) || mRedirectCount > MAX_REDIRECT_COUNT) {
                     if (mCompleteListener != null) {
                         mCompleteListener.onFailed();
@@ -71,7 +74,7 @@ public class DownloadSizeTask extends AsyncTask<String, Integer, Object> {
         return null;
     }
 
-    public void setOnCompleteListener(OnInternalCompleteListener listener) {
+    public void setOnCompleteListener(OnCompleteListener listener) {
         this.mCompleteListener = listener;
     }
 }

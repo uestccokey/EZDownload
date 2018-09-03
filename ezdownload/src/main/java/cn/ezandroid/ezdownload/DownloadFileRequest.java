@@ -49,6 +49,16 @@ public class DownloadFileRequest implements Serializable {
         this.mEndPosition = blockSize * blockPosition + blockSize;
     }
 
+    @Override
+    public String toString() {
+        return "DownloadFileRequest{" +
+                "mStartPosition=" + mStartPosition +
+                ", mEndPosition=" + mEndPosition +
+                ", mStatus=" + mStatus +
+                ", mUrl='" + mUrl + '\'' +
+                '}';
+    }
+
     public void addRetryCount() {
         if (mRetryCount < MAX_RETRY_NUM) {
             mRetryCount++;

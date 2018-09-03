@@ -6,9 +6,9 @@ package cn.ezandroid.ezdownload;
  * @author like
  * @date 2018-09-03
  */
-public interface OnCompleteListener {
+interface OnCompleteListener {
 
     void onFailed();
 
-    void onCompleted();
+    void onCompleted(String url, int contentLength);
 }
