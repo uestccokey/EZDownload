@@ -12,7 +12,7 @@ public class DownloadFileRequest implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 42L;
 
-    private final static int MAX_RETRY_NUM = 3;
+    private final static int MAX_RETRY_COUNT = 3;
 
     private long mTotalContentLength;
     private long mBlockSize;
@@ -55,13 +55,13 @@ public class DownloadFileRequest implements Serializable, Cloneable {
     }
 
     public void addRetryCount() {
-        if (mRetryCount < MAX_RETRY_NUM) {
+        if (mRetryCount < MAX_RETRY_COUNT) {
             mRetryCount++;
         }
     }
 
     public boolean shouldRetry() {
-        return mRetryCount < MAX_RETRY_NUM;
+        return mRetryCount < MAX_RETRY_COUNT;
     }
 
     public void setCurrentLength(long currentLength) {
