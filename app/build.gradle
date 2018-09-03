@@ -28,6 +28,10 @@ dependencies {
     implementation "com.android.support:design:$rootProject.ext.supportLibraryVersion"
     implementation 'com.android.support:multidex:1.0.3'
 
+    implementation 'cn.ezandroid:EZPermission:1.0.5'
+
     debugImplementation 'com.squareup.leakcanary:leakcanary-android:1.5.4'
     releaseImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.4'
+
+    implementation project(':ezdownload')
 }
