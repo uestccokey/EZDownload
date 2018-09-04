@@ -8,6 +8,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 import static cn.ezandroid.ezdownload.HttpState.HTTP_STATE_SC_OK;
+import static cn.ezandroid.ezdownload.HttpState.HTTP_STATE_SC_PARTIAL_CONTENT;
 import static cn.ezandroid.ezdownload.HttpState.HTTP_STATE_SC_REDIRECT;
 
 /**
@@ -39,25 +40,34 @@ public class DownloadInfoTask extends AsyncTask<String, Integer, Object> {
             connection.setReadTimeout(20000);
             connection.setRequestProperty("Accept", "*, */*");
             connection.setRequestProperty("accept-charset", "utf-8");
+            connection.setRequestProperty("Range", "bytes=0-1"); // 用来判断是否支持断点续传
             connection.setRequestMethod("GET");
 
             int code = connection.getResponseCode();
             Log.e("DownloadInfoTask", "onConnected:" + code + " " + params[0]);
-            if (code == HTTP_STATE_SC_OK) {
-                int contentLength = connection.getContentLength();
+            if (code == HTTP_STATE_SC_OK || code == HTTP_STATE_SC_PARTIAL_CONTENT) {
+                boolean supportRange;
+                long contentLength;
+                String contentRange = connection.getHeaderField("Content-Range");
+                if (!TextUtils.isEmpty(contentRange)) {
+                    contentLength = Long.parseLong(contentRange.substring(contentRange.indexOf('/') + 1));
+                    supportRange = true;
+                } else {
+                    contentLength = connection.getContentLength();
+                    supportRange = false;
+                }
                 Log.e("DownloadInfoTask", "Total size:" + contentLength);
                 if (contentLength <= 0) {
                     retry(params);
                 } else {
                     if (mCompleteListener != null) {
-                        mCompleteListener.onCompleted(params[0], connection.getContentLength());
+                        mCompleteListener.onCompleted(params[0], contentLength, supportRange);
                     }
                 }
             } else if (code == HTTP_STATE_SC_REDIRECT) {
-                // 处理重定向
                 mRedirectCount++;
                 String location = connection.getHeaderField("Location");
-                Log.e("DownloadInfoTask", "Redirect url:" + location);
+                Log.e("DownloadInfoTask", "Redirect url:" + location + " " + mRedirectCount);
                 if (TextUtils.isEmpty(location) || mRedirectCount > MAX_REDIRECT_COUNT) {
                     retry(params);
                 } else {
@@ -90,5 +100,12 @@ public class DownloadInfoTask extends AsyncTask<String, Integer, Object> {
 
     public void setOnCompleteListener(OnCompleteListener listener) {
         this.mCompleteListener = listener;
+    }
+
+    interface OnCompleteListener {
+
+        void onSuspend();
+
+        void onCompleted(String url, long contentLength, boolean supportRange);
     }
 }

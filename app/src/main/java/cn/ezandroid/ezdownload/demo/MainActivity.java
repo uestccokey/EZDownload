@@ -8,6 +8,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
+import java.util.Locale;
+
 import cn.ezandroid.ezdownload.EZDownload;
 import cn.ezandroid.ezdownload.IDownloadListener;
 import cn.ezandroid.ezpermission.EZPermission;
@@ -20,6 +22,11 @@ public class MainActivity extends AppCompatActivity {
     private Button mDownloadButton;
 
     private EZDownload.Downloader mDownloader;
+
+    // 测试小文件 http://116.62.9.17:8080/examples/2.mp4
+    // 测试大文件 http://mirror.aarnet.edu.au/pub/TED-talks/911Mothers_2010W-480p.mp4
+    // 测试不支持断点续传 https://github.com/lingochamp/FileDownloader/archive/v1.7.4.zip
+    // 测试重定向 http://t.cn/RCSKsoX
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,13 +58,9 @@ public class MainActivity extends AppCompatActivity {
                         if (mDownloader == null) {
                             mProgressDialog.show();
                             long time = System.currentTimeMillis();
-                            // http://116.62.9.17:8080/examples/2.mp4
-                            // http://mirror.aarnet.edu.au/pub/TED-talks/911Mothers_2010W-480p.mp4
-                            // https://codeload.github.com/lingochamp/FileDownloader/zip/v1.7.4
-                            // https://github.com/lingochamp/FileDownloader/archive/v1.7.4.zip
-                            mDownloader = EZDownload.download("https://github.com/lingochamp/FileDownloader/archive/v1.7.3.zip")
-                                    .setPath("/sdcard/3.zip")
-                                    .setThreadCount(4)
+                            mDownloader = EZDownload.download("https://github.com/lingochamp/FileDownloader/archive/v1.7.4.zip")
+                                    .setPath("/sdcard/3")
+                                    .setThreadCount(2)
                                     .setDownloadListener(new IDownloadListener() {
                                         @Override
                                         public void onSuspend() {
@@ -70,6 +73,10 @@ public class MainActivity extends AppCompatActivity {
                                         public void onProgressUpdated(float progress) {
                                             Log.e("MainActivity", "onProgressUpdated:" + progress);
                                             mProgressDialog.setProgress(Math.round(progress));
+                                            float total = mDownloader.getDownloadTotalSize() / 1024f / 1024f;
+                                            float current = mDownloader.getDownloadCurrentSize() / 1024f / 1024f;
+                                            mProgressDialog.setProgressNumberFormat(String.format(Locale.getDefault(),
+                                                    "%.2fMB/%.2fMB", current, total));
                                         }
 
                                         @Override

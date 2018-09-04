@@ -27,8 +27,6 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
     private OnProgressUpdateListener mProgressUpdateListener;
     private OnCompleteListener mCompleteListener;
 
-    private int mContentLength;
-
     public DownloadFileTask(DownloadFileRequest request) {
         this.mDownloadFileRequest = request;
     }
@@ -84,8 +82,9 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
                     inputStream = connection.getInputStream();
                     int length;
                     long currentLength = mDownloadFileRequest.getCurrentLength();
-                    mContentLength = connection.getContentLength();
-
+                    long contentLength = connection.getContentLength();
+//                    String contentRange = connection.getHeaderField("Content-Range");
+//                    Log.e("DownloadFileTask", "ContentLength:" + contentLength + " ContentRange:" + contentRange);
                     byte[] buffer = new byte[1024 * 1024];
                     while ((length = inputStream.read(buffer)) != -1) {
                         if (isCancelled()) {
@@ -93,8 +92,8 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
                         }
 
                         currentLength += length;
-                        if (mContentLength > 0) {
-                            float blockProgress = currentLength * 100f / mContentLength;
+                        if (contentLength > 0) {
+                            float blockProgress = currentLength * 100f / contentLength;
                             float totalProgress = currentLength * 100f / mDownloadFileRequest.getTotalContentLength();
                             mDownloadFileRequest.setProgress(totalProgress);
                             publishProgress(blockProgress, totalProgress);
@@ -148,7 +147,7 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
             mDownloadFileRequest.setStatus(COMPLETED);
 //            Log.e("DownloadFileTask", "onCompleted:" + mDownloadFileRequest.getUrl() + " " + mDownloadFileRequest.toString());
             if (mCompleteListener != null) {
-                mCompleteListener.onCompleted(mDownloadFileRequest.getUrl(), mContentLength);
+                mCompleteListener.onCompleted();
             }
         } else {
 //            Log.e("DownloadFileTask", "onSuspend:" + mDownloadFileRequest.getUrl() + " " + mDownloadFileRequest.toString());
@@ -178,5 +177,17 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
 
     public void setCompleteListener(OnCompleteListener completeListener) {
         this.mCompleteListener = completeListener;
+    }
+
+    interface OnProgressUpdateListener {
+
+        void onProgressUpdated(int position, float subProgress, float totalProgress);
+    }
+
+    interface OnCompleteListener {
+
+        void onSuspend();
+
+        void onCompleted();
     }
 }

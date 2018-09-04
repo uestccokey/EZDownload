@@ -66,6 +66,36 @@ public class EZDownload {
         }
 
         /**
+         * 获取要下载的文件总大小
+         *
+         * @return
+         */
+        public long getDownloadTotalSize() {
+            if (mFileTasks.isEmpty()) {
+                return 0;
+            } else {
+                return mFileTasks.get(0).getDownloadFileRequest().getTotalContentLength();
+            }
+        }
+
+        /**
+         * 获取当前已下载的文件总大小
+         *
+         * @return
+         */
+        public long getDownloadCurrentSize() {
+            if (mFileTasks.isEmpty()) {
+                return 0;
+            } else {
+                long size = 0;
+                for (DownloadFileTask task : mFileTasks) {
+                    size += task.getDownloadFileRequest().getCurrentLength();
+                }
+                return size;
+            }
+        }
+
+        /**
          * 获取下载进度
          *
          * @return
@@ -114,7 +144,7 @@ public class EZDownload {
             }
 
             DownloadInfoTask downloadInfoTask = new DownloadInfoTask();
-            downloadInfoTask.setOnCompleteListener(new OnCompleteListener() {
+            downloadInfoTask.setOnCompleteListener(new DownloadInfoTask.OnCompleteListener() {
                 @Override
                 public void onSuspend() {
                     mStatus = DownloadStatus.SUSPEND;
@@ -126,10 +156,13 @@ public class EZDownload {
                 }
 
                 @Override
-                public void onCompleted(String url, int contentLength) {
+                public void onCompleted(String url, long contentLength, boolean supportRange) {
+                    if (!supportRange) {
+                        mThreadCount = 1; // 不支持断点续传时，退化为单线程下载
+                    }
+
                     mStatus = DownloadStatus.DOWNLOADING;
                     long blockSize = (int) Math.ceil((float) contentLength / mThreadCount);
-
                     for (int i = 0; i < mThreadCount; i++) {
                         DownloadFileTask downloadFileTask
                                 = new DownloadFileTask(new DownloadFileRequest(url, mPath, contentLength, blockSize, i));
@@ -138,7 +171,7 @@ public class EZDownload {
                                 mDownloadListener.onProgressUpdated(getDownloadProgress());
                             }
                         });
-                        downloadFileTask.setCompleteListener(new OnCompleteListener() {
+                        downloadFileTask.setCompleteListener(new DownloadFileTask.OnCompleteListener() {
                             @Override
                             public void onSuspend() {
                                 mStatus = DownloadStatus.SUSPEND;
@@ -150,7 +183,7 @@ public class EZDownload {
                             }
 
                             @Override
-                            public void onCompleted(String url, int contentLength) {
+                            public void onCompleted() {
                                 if (isDownloadCompleted()) {
                                     mStatus = DownloadStatus.COMPLETED;
                                     mMainHandler.post(() -> {
