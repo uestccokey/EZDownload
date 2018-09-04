@@ -1,5 +1,8 @@
 package cn.ezandroid.ezdownload;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -36,6 +39,8 @@ public class EZDownload {
         private ExecutorService mExecutorService;
 
         private DownloadStatus mStatus = DownloadStatus.IDLE;
+
+        private Handler mMainHandler = new Handler(Looper.getMainLooper());
 
         private Downloader() {
         }
@@ -113,9 +118,11 @@ public class EZDownload {
                 @Override
                 public void onSuspend() {
                     mStatus = DownloadStatus.SUSPEND;
-                    if (mDownloadListener != null) {
-                        mDownloadListener.onSuspend();
-                    }
+                    mMainHandler.post(() -> {
+                        if (mDownloadListener != null) {
+                            mDownloadListener.onSuspend();
+                        }
+                    });
                 }
 
                 @Override
@@ -135,18 +142,22 @@ public class EZDownload {
                             @Override
                             public void onSuspend() {
                                 mStatus = DownloadStatus.SUSPEND;
-                                if (mDownloadListener != null) {
-                                    mDownloadListener.onSuspend();
-                                }
+                                mMainHandler.post(() -> {
+                                    if (mDownloadListener != null) {
+                                        mDownloadListener.onSuspend();
+                                    }
+                                });
                             }
 
                             @Override
                             public void onCompleted(String url, int contentLength) {
                                 if (isDownloadCompleted()) {
                                     mStatus = DownloadStatus.COMPLETED;
-                                    if (mDownloadListener != null) {
-                                        mDownloadListener.onCompleted();
-                                    }
+                                    mMainHandler.post(() -> {
+                                        if (mDownloadListener != null) {
+                                            mDownloadListener.onCompleted();
+                                        }
+                                    });
                                 }
                             }
                         });

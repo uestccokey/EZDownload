@@ -94,8 +94,8 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
 
                         currentLength += length;
                         if (mContentLength > 0) {
-                            float blockProgress = currentLength / 100f / mContentLength;
-                            float totalProgress = currentLength / 100f / mDownloadFileRequest.getTotalContentLength();
+                            float blockProgress = currentLength * 100f / mContentLength;
+                            float totalProgress = currentLength * 100f / mDownloadFileRequest.getTotalContentLength();
                             mDownloadFileRequest.setProgress(totalProgress);
                             publishProgress(blockProgress, totalProgress);
                         }
