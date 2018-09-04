@@ -50,6 +50,10 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
     }
 
     private void startDownload() {
+        if (mDownloadRequest.getStatus() == COMPLETED) {
+            return;
+        }
+
         HttpURLConnection connection = null;
         try {
             long offset = mDownloadRequest.isSupportRange() ? mDownloadRequest.getCurrentLength() : 0;
@@ -88,7 +92,7 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
                     long contentLength = connection.getContentLength();
 //                    String contentRange = connection.getHeaderField("Content-Range");
 //                    Log.e("DownloadFileTask", "ContentLength:" + contentLength + " ContentRange:" + contentRange);
-                    byte[] buffer = new byte[1024 * 1024];
+                    byte[] buffer = new byte[1024 * 128];
                     while ((length = inputStream.read(buffer)) != -1) {
                         if (isCancelled()) {
                             return;
@@ -113,6 +117,7 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
                     }
                 }
             } else if (code == HTTP_STATE_SC_REQUESTED_RANGE_NOT_SATISFIABLE) {
+                mDownloadRequest.setStatus(DOWNLOADING);
                 // 只会在分段下载完成后，但程序再次请求时出现
             } else {
                 retry();

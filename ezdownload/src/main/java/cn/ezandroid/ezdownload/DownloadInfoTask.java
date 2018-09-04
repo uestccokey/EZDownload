@@ -40,10 +40,18 @@ public class DownloadInfoTask extends AsyncTask<String, Integer, Object> {
             connection.setReadTimeout(20000);
             connection.setRequestProperty("Accept", "*, */*");
             connection.setRequestProperty("accept-charset", "utf-8");
-            connection.setRequestProperty("Range", "bytes=0-1"); // 用来判断是否支持断点续传
+            connection.setRequestProperty("Range", "bytes=0-"); // 用来判断是否支持断点续传
             connection.setRequestMethod("GET");
 
             int code = connection.getResponseCode();
+
+            if (isCancelled()) {
+                if (mCompleteListener != null) {
+                    mCompleteListener.onSuspend();
+                }
+                return null;
+            }
+
             Log.e("DownloadInfoTask", "onConnected:" + code + " " + params[0]);
             if (code == HTTP_STATE_SC_OK || code == HTTP_STATE_SC_PARTIAL_CONTENT) {
                 boolean supportRange;
@@ -56,7 +64,7 @@ public class DownloadInfoTask extends AsyncTask<String, Integer, Object> {
                     contentLength = connection.getContentLength();
                     supportRange = false;
                 }
-                Log.e("DownloadInfoTask", "Total size:" + contentLength);
+//                Log.e("DownloadInfoTask", "ContentLength:" + connection.getContentLength() + " ContentRange:" + contentRange);
                 if (contentLength <= 0) {
                     retry(params);
                 } else {

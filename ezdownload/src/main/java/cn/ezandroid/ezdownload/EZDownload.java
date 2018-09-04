@@ -34,6 +34,7 @@ public class EZDownload {
 
         private IDownloadListener mDownloadListener;
 
+        private DownloadInfoTask mInfoTask = new DownloadInfoTask();
         private List<DownloadFileTask> mFileTasks = new ArrayList<>();
 
         private ExecutorService mExecutorService;
@@ -143,8 +144,8 @@ public class EZDownload {
                 mExecutorService = Executors.newFixedThreadPool(mThreadCount);
             }
 
-            DownloadInfoTask downloadInfoTask = new DownloadInfoTask();
-            downloadInfoTask.setOnCompleteListener(new DownloadInfoTask.OnCompleteListener() {
+            mInfoTask = new DownloadInfoTask();
+            mInfoTask.setOnCompleteListener(new DownloadInfoTask.OnCompleteListener() {
                 @Override
                 public void onSuspend() {
                     mStatus = DownloadStatus.SUSPEND;
@@ -199,7 +200,7 @@ public class EZDownload {
                     }
                 }
             });
-            downloadInfoTask.execute(mUrl);
+            mInfoTask.execute(mUrl);
             return this;
         }
 
@@ -220,6 +221,7 @@ public class EZDownload {
                 try {
                     List<DownloadFileTask> copyTasks = new ArrayList<>();
                     for (DownloadFileTask task : mFileTasks) {
+                        task.cancel(true);
                         copyTasks.add(task.copy());
                     }
                     mFileTasks = copyTasks;
@@ -241,6 +243,9 @@ public class EZDownload {
          */
         public Downloader pause() {
             mStatus = DownloadStatus.SUSPEND;
+            if (mInfoTask != null) {
+                mInfoTask.cancel(true);
+            }
             for (DownloadFileTask task : mFileTasks) {
                 task.cancel(true);
             }
@@ -256,6 +261,9 @@ public class EZDownload {
          */
         public void destroy() {
             mStatus = DownloadStatus.IDLE;
+            if (mInfoTask != null) {
+                mInfoTask.cancel(true);
+            }
             for (DownloadFileTask task : mFileTasks) {
                 task.cancel(true);
             }

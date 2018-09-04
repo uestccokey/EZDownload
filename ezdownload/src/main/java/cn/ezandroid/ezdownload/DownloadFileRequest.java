@@ -56,7 +56,8 @@ public class DownloadFileRequest implements Serializable, Cloneable {
     public String toString() {
         return "from " + mStartPosition +
                 " to " + mEndPosition +
-                " > " + mCurrentLength;
+                " > " + mCurrentLength +
+                " " + mStatus;
     }
 
     public boolean isSupportRange() {
