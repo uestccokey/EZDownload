@@ -64,7 +64,7 @@ public class DownloadInfoTask extends AsyncTask<String, Integer, Object> {
                     contentLength = connection.getContentLength();
                     supportRange = false;
                 }
-//                Log.e("DownloadInfoTask", "ContentLength:" + connection.getContentLength() + " ContentRange:" + contentRange);
+                Log.e("DownloadInfoTask", "ContentLength:" + connection.getContentLength() + " ContentRange:" + contentRange);
                 if (contentLength <= 0) {
                     retry(params);
                 } else {
