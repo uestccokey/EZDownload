@@ -12,7 +12,7 @@ public class DownloadFileRequest implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 42L;
 
-    private final static int MAX_RETRY_COUNT = 3;
+    private static final int MAX_RETRY_COUNT = 3;
 
     private long mTotalContentLength;
     private long mBlockSize;
@@ -23,8 +23,8 @@ public class DownloadFileRequest implements Serializable, Cloneable {
 
     private long mCurrentLength;
 
-    private float mProgress = 0;
-    private int mRetryCount = 0;
+    private float mProgress;
+    private int mRetryCount;
     private DownloadStatus mStatus = DownloadStatus.IDLE;
 
     private String mUrl;
@@ -55,9 +55,7 @@ public class DownloadFileRequest implements Serializable, Cloneable {
     }
 
     public void addRetryCount() {
-        if (mRetryCount < MAX_RETRY_COUNT) {
-            mRetryCount++;
-        }
+        mRetryCount++;
     }
 
     public boolean shouldRetry() {

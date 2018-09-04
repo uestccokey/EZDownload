@@ -21,8 +21,10 @@ import static cn.ezandroid.ezdownload.HttpState.HTTP_STATE_SC_REDIRECT;
 public class DownloadInfoTask extends AsyncTask<String, Integer, Object> {
 
     private static final int MAX_REDIRECT_COUNT = 3; // 最大重定向次数
+    private static final int MAX_RETRY_COUNT = 3;
 
     private int mRedirectCount;
+    private int mRetryCount;
 
     private OnCompleteListener mCompleteListener;
 
@@ -42,9 +44,14 @@ public class DownloadInfoTask extends AsyncTask<String, Integer, Object> {
             int code = connection.getResponseCode();
             Log.e("DownloadInfoTask", "onConnected:" + code + " " + params[0]);
             if (code == HTTP_STATE_SC_OK) {
-                Log.e("DownloadInfoTask", "Total size:" + connection.getContentLength());
-                if (mCompleteListener != null) {
-                    mCompleteListener.onCompleted(params[0], connection.getContentLength());
+                int contentLength = connection.getContentLength();
+                Log.e("DownloadInfoTask", "Total size:" + contentLength);
+                if (contentLength <= 0) {
+                    retry(params);
+                } else {
+                    if (mCompleteListener != null) {
+                        mCompleteListener.onCompleted(params[0], connection.getContentLength());
+                    }
                 }
             } else if (code == HTTP_STATE_SC_REDIRECT) {
                 // 处理重定向
@@ -52,21 +59,15 @@ public class DownloadInfoTask extends AsyncTask<String, Integer, Object> {
                 String location = connection.getHeaderField("Location");
                 Log.e("DownloadInfoTask", "Redirect url:" + location);
                 if (TextUtils.isEmpty(location) || mRedirectCount > MAX_REDIRECT_COUNT) {
-                    if (mCompleteListener != null) {
-                        mCompleteListener.onSuspend();
-                    }
+                    retry(params);
                 } else {
                     doInBackground(location);
                 }
             } else {
-                if (mCompleteListener != null) {
-                    mCompleteListener.onSuspend();
-                }
+                retry(params);
             }
         } catch (Exception e) {
-            if (mCompleteListener != null) {
-                mCompleteListener.onSuspend();
-            }
+            retry(params);
             e.printStackTrace();
         } finally {
             if (connection != null) {
@@ -74,6 +75,17 @@ public class DownloadInfoTask extends AsyncTask<String, Integer, Object> {
             }
         }
         return null;
+    }
+
+    private void retry(String... params) {
+        if (mRetryCount < MAX_RETRY_COUNT) {
+            mRetryCount++;
+            doInBackground(params);
+        } else {
+            if (mCompleteListener != null) {
+                mCompleteListener.onSuspend();
+            }
+        }
     }
 
     public void setOnCompleteListener(OnCompleteListener listener) {

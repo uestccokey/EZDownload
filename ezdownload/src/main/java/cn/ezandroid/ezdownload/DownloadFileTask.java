@@ -113,25 +113,23 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
             } else if (code == HTTP_STATE_SC_REQUESTED_RANGE_NOT_SATISFIABLE) {
                 // 只会在分段下载完成后，但程序再次请求时出现
             } else {
-                mDownloadFileRequest.setStatus(SUSPEND);
-
-                mDownloadFileRequest.addRetryCount();
-                if (mDownloadFileRequest.shouldRetry()) {
-                    startDownload();
-                }
+                retry();
             }
         } catch (Exception e) {
-            mDownloadFileRequest.setStatus(SUSPEND);
-
-            mDownloadFileRequest.addRetryCount();
-            if (mDownloadFileRequest.shouldRetry()) {
-                startDownload();
-            }
+            retry();
             e.printStackTrace();
         } finally {
             if (connection != null) {
                 connection.disconnect();
             }
+        }
+    }
+
+    private void retry() {
+        mDownloadFileRequest.setStatus(SUSPEND);
+        if (mDownloadFileRequest.shouldRetry()) {
+            mDownloadFileRequest.addRetryCount();
+            startDownload();
         }
     }
 

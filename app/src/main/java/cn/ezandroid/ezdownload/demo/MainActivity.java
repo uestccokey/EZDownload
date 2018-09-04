@@ -53,8 +53,10 @@ public class MainActivity extends AppCompatActivity {
                             long time = System.currentTimeMillis();
                             // http://116.62.9.17:8080/examples/2.mp4
                             // http://mirror.aarnet.edu.au/pub/TED-talks/911Mothers_2010W-480p.mp4
-                            mDownloader = EZDownload.download("http://mirror.aarnet.edu.au/pub/TED-talks/911Mothers_2010W-480p.mp4")
-                                    .setPath("/sdcard/3.mp4")
+                            // https://codeload.github.com/lingochamp/FileDownloader/zip/v1.7.4
+                            // https://github.com/lingochamp/FileDownloader/archive/v1.7.4.zip
+                            mDownloader = EZDownload.download("https://github.com/lingochamp/FileDownloader/archive/v1.7.3.zip")
+                                    .setPath("/sdcard/3.zip")
                                     .setThreadCount(4)
                                     .setDownloadListener(new IDownloadListener() {
                                         @Override
