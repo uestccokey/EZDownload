@@ -200,7 +200,7 @@ public class EZDownload {
                     }
                 }
             });
-            mInfoTask.execute(mUrl);
+            mInfoTask.executeOnExecutor(mExecutorService, mUrl);
             return this;
         }
 
