@@ -26,11 +26,14 @@ public class DownloadFileRequest implements Serializable, Cloneable {
     private float mProgress;
     private int mRetryCount;
     private DownloadStatus mStatus = DownloadStatus.IDLE;
+    private boolean mSupportRange;
 
     private String mUrl;
     private String mPath;
 
-    public DownloadFileRequest(String url, String path, long totalContentLength, long blockSize, int blockPosition) {
+    public DownloadFileRequest(String url, String path,
+                               long totalContentLength, long blockSize, int blockPosition,
+                               boolean supportRange) {
         this.mUrl = url;
         this.mPath = path;
 
@@ -40,6 +43,8 @@ public class DownloadFileRequest implements Serializable, Cloneable {
 
         this.mStartPosition = blockSize * blockPosition;
         this.mEndPosition = blockSize * blockPosition + blockSize;
+
+        mSupportRange = supportRange;
     }
 
     @Override
@@ -52,6 +57,14 @@ public class DownloadFileRequest implements Serializable, Cloneable {
         return "from " + mStartPosition +
                 " to " + mEndPosition +
                 " > " + mCurrentLength;
+    }
+
+    public boolean isSupportRange() {
+        return mSupportRange;
+    }
+
+    public void setSupportRange(boolean supportRange) {
+        mSupportRange = supportRange;
     }
 
     public void addRetryCount() {

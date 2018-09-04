@@ -165,7 +165,7 @@ public class EZDownload {
                     long blockSize = (int) Math.ceil((float) contentLength / mThreadCount);
                     for (int i = 0; i < mThreadCount; i++) {
                         DownloadFileTask downloadFileTask
-                                = new DownloadFileTask(new DownloadFileRequest(url, mPath, contentLength, blockSize, i));
+                                = new DownloadFileTask(new DownloadFileRequest(url, mPath, contentLength, blockSize, i, supportRange));
                         downloadFileTask.setProgressUpdateListener((position, subProgress, totalProgress) -> {
                             if (mDownloadListener != null) {
                                 mDownloadListener.onProgressUpdated(getDownloadProgress());

@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
                         if (mDownloader == null) {
                             mProgressDialog.show();
                             long time = System.currentTimeMillis();
-                            mDownloader = EZDownload.download("https://github.com/lingochamp/FileDownloader/archive/v1.7.4.zip")
+                            mDownloader = EZDownload.download("http://116.62.9.17:8080/examples/2.mp4")
                                     .setPath("/sdcard/3")
                                     .setThreadCount(2)
                                     .setDownloadListener(new IDownloadListener() {
