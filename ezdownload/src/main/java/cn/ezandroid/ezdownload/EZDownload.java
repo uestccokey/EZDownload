@@ -56,6 +56,11 @@ public class EZDownload {
             return this;
         }
 
+        public Downloader setExecutorService(ExecutorService executorService) {
+            mExecutorService = executorService;
+            return this;
+        }
+
         public Downloader setThreadCount(int threadCount) {
             mThreadCount = Math.max(threadCount, 1);
             return this;
@@ -250,7 +255,7 @@ public class EZDownload {
                 task.cancel(true);
             }
 
-            if (mExecutorService != null) {
+            if (mExecutorService != null && !mExecutorService.isShutdown()) {
                 mExecutorService.shutdownNow();
             }
             return this;
@@ -268,7 +273,7 @@ public class EZDownload {
                 task.cancel(true);
             }
 
-            if (mExecutorService != null) {
+            if (mExecutorService != null && !mExecutorService.isShutdown()) {
                 mExecutorService.shutdownNow();
             }
 
