@@ -73,6 +73,15 @@ public class EZDownload {
         }
 
         /**
+         * 获取分片下载任务列表
+         *
+         * @return
+         */
+        public List<DownloadFileTask> getDownloaders() {
+            return mFileTasks;
+        }
+
+        /**
          * 获取要下载的文件总大小
          *
          * @return
@@ -294,6 +303,8 @@ public class EZDownload {
             }
             for (DownloadFileTask task : mFileTasks) {
                 task.cancel(true);
+                task.setProgressUpdateListener(null);
+                task.setCompleteListener(null);
             }
 
             if (mExecutorService != null && !mExecutorService.isShutdown()) {
