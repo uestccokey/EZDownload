@@ -49,15 +49,11 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
     }
 
     private void startDownload() {
-        if (mDownloadRequest.getStatus() == COMPLETED) {
-            return;
-        }
-
         long offset = mDownloadRequest.getContentRange() > 0 ? mDownloadRequest.getCurrentLength() : 0;
         long start = mDownloadRequest.getStartPosition() + offset;
         long end = mDownloadRequest.getEndPosition() - 1;
 
-        if (end <= start) {
+        if (end <= start || mDownloadRequest.getStatus() == COMPLETED || isCancelled()) {
             return;
         }
 
@@ -99,18 +95,17 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
                     Log.e("DownloadFileTask", "ContentLength:" + contentLength
                             + " ContentRange:" + rangeString);
                     byte[] buffer = new byte[1024 * 512];
-                    while ((length = inputStream.read(buffer)) != -1) {
+                    while (mDownloadRequest.getCurrentLength() < mDownloadRequest.getBlockSize()
+                            && (length = inputStream.read(buffer)) != -1) {
                         if (isCancelled()) {
                             return;
                         }
 
                         currentLength += length;
-                        if (contentLength > 0) {
-                            float blockProgress = currentLength * 100f / contentLength;
-                            float totalProgress = currentLength * 100f / mDownloadRequest.getTotalContentLength();
-                            mDownloadRequest.setProgress(totalProgress);
-                            publishProgress(blockProgress, totalProgress);
-                        }
+                        float blockProgress = currentLength * 100f / mDownloadRequest.getBlockSize();
+                        float totalProgress = currentLength * 100f / mDownloadRequest.getTotalContentLength();
+                        mDownloadRequest.setProgress(totalProgress);
+                        publishProgress(blockProgress, totalProgress);
                         randomAccessFile.write(buffer, 0, length);
                         mDownloadRequest.setCurrentLength(currentLength);
                     }

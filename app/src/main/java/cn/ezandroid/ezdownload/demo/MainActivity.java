@@ -24,9 +24,7 @@ public class MainActivity extends AppCompatActivity {
 
     private EZDownload.Downloader mDownloader;
 
-    private String mUrl = "https://www.baidupcs.com/rest/2.0/pcs/file?method=batchdownload&app_id=250528&zipcontent=%7B%22fs_id%22%3A" +
-            "%5B107809464443833%5D%7D&sign=DCb740ccc5511e5e8fedcff06b081203:KjmIACJQRWsN1XCmGuX1Ys9bDFo%3D&uid=1678264183&time=1536208193&dp-logid" +
-            "=5740705277993713336&dp-callid=0&vuk=1678264183&zipname=%E3%80%90%E6%96%87%E4%BB%B6%E3%80%91AQWeight.zip.zip";
+    private String mUrl = "http://aqgo.ezandroid.cn/AQWeight.zip";
 
     // 测试小文件 http://116.62.9.17:8080/examples/2.mp4
     // 测试大文件 http://mirror.aarnet.edu.au/pub/TED-talks/911Mothers_2010W-480p.mp4
