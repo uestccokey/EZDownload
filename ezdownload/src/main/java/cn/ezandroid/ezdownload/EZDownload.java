@@ -2,6 +2,7 @@ package cn.ezandroid.ezdownload;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -162,16 +163,38 @@ public class EZDownload {
                 }
 
                 @Override
-                public void onCompleted(String url, long contentLength, boolean supportRange) {
-                    if (!supportRange) {
-                        mThreadCount = 1; // 不支持断点续传时，退化为单线程下载
+                public void onCompleted(String url, long contentLength, long contentRange) {
+                    long blockCount = mThreadCount;
+                    long blockSize = contentLength;
+                    if (contentRange <= 0) {
+                        blockCount = 1; // 不支持断点续传时，退化为单线程下载
+                    } else {
+                        blockSize = (int) Math.ceil((double) contentLength / blockCount);
+                        while (blockSize > contentRange) {
+                            // 分块大小大于服务器支持的分段大小时，自动增加分块数，以满足分块大小小于或等于支持的分段大小
+                            blockCount++;
+
+                            blockSize = (int) Math.ceil((double) contentLength / blockCount);
+                        }
                     }
+                    Log.e("EZDownload", "BlockCount:" + blockCount + " BlockSize:" + blockSize);
 
                     mStatus = DownloadStatus.DOWNLOADING;
-                    long blockSize = (int) Math.ceil((float) contentLength / mThreadCount);
-                    for (int i = 0; i < mThreadCount; i++) {
-                        DownloadFileTask downloadFileTask
-                                = new DownloadFileTask(new DownloadFileRequest(url, mPath, contentLength, blockSize, i, supportRange));
+                    for (int i = 0; i < blockCount; i++) {
+                        DownloadFileRequest downloadFileRequest = new DownloadFileRequest(url, mPath);
+                        downloadFileRequest.setTotalContentLength(contentLength);
+                        downloadFileRequest.setBlockPosition(i);
+                        if (i == blockCount - 1) {
+                            downloadFileRequest.setBlockSize(contentLength - blockSize * i);
+                            downloadFileRequest.setStartPosition(blockSize * i);
+                            downloadFileRequest.setEndPosition(contentLength);
+                        } else {
+                            downloadFileRequest.setBlockSize(blockSize);
+                            downloadFileRequest.setStartPosition(blockSize * i);
+                            downloadFileRequest.setEndPosition(blockSize * i + blockSize);
+                        }
+                        downloadFileRequest.setContentRange(contentRange);
+                        DownloadFileTask downloadFileTask = new DownloadFileTask(downloadFileRequest);
                         downloadFileTask.setProgressUpdateListener((position, subProgress, totalProgress) -> {
                             if (mDownloadListener != null) {
                                 mDownloadListener.onProgressUpdated(getDownloadProgress());

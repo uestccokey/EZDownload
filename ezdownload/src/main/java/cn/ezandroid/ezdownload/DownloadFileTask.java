@@ -13,7 +13,6 @@ import static cn.ezandroid.ezdownload.DownloadStatus.DOWNLOADING;
 import static cn.ezandroid.ezdownload.DownloadStatus.SUSPEND;
 import static cn.ezandroid.ezdownload.HttpState.HTTP_STATE_SC_OK;
 import static cn.ezandroid.ezdownload.HttpState.HTTP_STATE_SC_PARTIAL_CONTENT;
-import static cn.ezandroid.ezdownload.HttpState.HTTP_STATE_SC_REQUESTED_RANGE_NOT_SATISFIABLE;
 
 /**
  * 下载（分片）文件任务
@@ -54,20 +53,26 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
             return;
         }
 
+        long offset = mDownloadRequest.getContentRange() > 0 ? mDownloadRequest.getCurrentLength() : 0;
+        long start = mDownloadRequest.getStartPosition() + offset;
+        long end = mDownloadRequest.getEndPosition() - 1;
+
+        if (end <= start) {
+            return;
+        }
+
         HttpURLConnection connection = null;
         try {
-            long offset = mDownloadRequest.isSupportRange() ? mDownloadRequest.getCurrentLength() : 0;
-            long start = mDownloadRequest.getStartPosition() + offset;
-            long end = mDownloadRequest.getEndPosition();
-
             URL url = new URL(mDownloadRequest.getUrl());
             connection = (HttpURLConnection) url.openConnection();
             connection.setDoInput(true);
             connection.setConnectTimeout(20000);
             connection.setReadTimeout(20000);
             connection.setRequestProperty("Accept", "*, */*");
-            connection.setRequestProperty("accept-charset", "utf-8");
-            connection.setRequestProperty("Range", "bytes=" + start + "-" + end);
+            connection.setRequestProperty("Accept-Charset", "utf-8");
+            if (mDownloadRequest.getContentRange() > 0) {
+                connection.setRequestProperty("Range", "bytes=" + start + "-" + end);
+            }
             connection.setRequestMethod("GET");
 
             int code = connection.getResponseCode();
@@ -90,9 +95,10 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
                     int length;
                     long currentLength = offset;
                     long contentLength = connection.getContentLength();
-//                    String contentRange = connection.getHeaderField("Content-Range");
-//                    Log.e("DownloadFileTask", "ContentLength:" + contentLength + " ContentRange:" + contentRange);
-                    byte[] buffer = new byte[1024 * 128];
+                    String rangeString = connection.getHeaderField("Content-Range");
+                    Log.e("DownloadFileTask", "ContentLength:" + contentLength
+                            + " ContentRange:" + rangeString);
+                    byte[] buffer = new byte[1024 * 512];
                     while ((length = inputStream.read(buffer)) != -1) {
                         if (isCancelled()) {
                             return;
@@ -116,9 +122,9 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
                         inputStream.close();
                     }
                 }
-            } else if (code == HTTP_STATE_SC_REQUESTED_RANGE_NOT_SATISFIABLE) {
-                mDownloadRequest.setStatus(DOWNLOADING);
-                // 只会在分段下载完成后，但程序再次请求时出现
+//            } else if (code == HTTP_STATE_SC_REQUESTED_RANGE_NOT_SATISFIABLE) {
+//                mDownloadRequest.setStatus(DOWNLOADING);
+//                // 只会在分段下载完成后，但程序再次请求时出现
             } else {
                 retry();
             }

@@ -26,25 +26,14 @@ public class DownloadFileRequest implements Serializable, Cloneable {
     private float mProgress;
     private int mRetryCount;
     private DownloadStatus mStatus = DownloadStatus.IDLE;
-    private boolean mSupportRange;
+    private long mContentRange;
 
     private String mUrl;
     private String mPath;
 
-    public DownloadFileRequest(String url, String path,
-                               long totalContentLength, long blockSize, int blockPosition,
-                               boolean supportRange) {
+    public DownloadFileRequest(String url, String path) {
         this.mUrl = url;
         this.mPath = path;
-
-        this.mTotalContentLength = totalContentLength;
-        this.mBlockSize = blockSize;
-        this.mBlockPosition = blockPosition;
-
-        this.mStartPosition = blockSize * blockPosition;
-        this.mEndPosition = blockSize * blockPosition + blockSize;
-
-        mSupportRange = supportRange;
     }
 
     @Override
@@ -60,12 +49,12 @@ public class DownloadFileRequest implements Serializable, Cloneable {
                 " " + mStatus;
     }
 
-    public boolean isSupportRange() {
-        return mSupportRange;
+    public long getContentRange() {
+        return mContentRange;
     }
 
-    public void setSupportRange(boolean supportRange) {
-        mSupportRange = supportRange;
+    public void setContentRange(long contentRange) {
+        this.mContentRange = contentRange;
     }
 
     public void addRetryCount() {
@@ -76,12 +65,12 @@ public class DownloadFileRequest implements Serializable, Cloneable {
         return mRetryCount < MAX_RETRY_COUNT;
     }
 
-    public void setCurrentLength(long currentLength) {
-        mCurrentLength = currentLength;
-    }
-
     public long getCurrentLength() {
         return mCurrentLength;
+    }
+
+    public void setCurrentLength(long currentLength) {
+        mCurrentLength = currentLength;
     }
 
     public String getUrl() {

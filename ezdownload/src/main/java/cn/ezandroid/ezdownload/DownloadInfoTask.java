@@ -39,7 +39,7 @@ public class DownloadInfoTask extends AsyncTask<String, Integer, Object> {
             connection.setConnectTimeout(20000);
             connection.setReadTimeout(20000);
             connection.setRequestProperty("Accept", "*, */*");
-            connection.setRequestProperty("accept-charset", "utf-8");
+            connection.setRequestProperty("Accept-Charset", "utf-8");
             connection.setRequestProperty("Range", "bytes=0-"); // 用来判断是否支持断点续传
             connection.setRequestMethod("GET");
 
@@ -54,22 +54,23 @@ public class DownloadInfoTask extends AsyncTask<String, Integer, Object> {
 
             Log.e("DownloadInfoTask", "onConnected:" + code + " " + params[0]);
             if (code == HTTP_STATE_SC_OK || code == HTTP_STATE_SC_PARTIAL_CONTENT) {
-                boolean supportRange;
                 long contentLength;
-                String contentRange = connection.getHeaderField("Content-Range");
-                if (!TextUtils.isEmpty(contentRange)) {
-                    contentLength = Long.parseLong(contentRange.substring(contentRange.indexOf('/') + 1));
-                    supportRange = true;
+                long contentRange;
+                String rangeString = connection.getHeaderField("Content-Range");
+                if (!TextUtils.isEmpty(rangeString)) {
+                    contentLength = Long.parseLong(rangeString.substring(rangeString.indexOf('/') + 1));
+                    contentRange = Long.parseLong(rangeString.substring(rangeString.indexOf("-") + 1, rangeString.indexOf('/'))) + 1;
                 } else {
                     contentLength = connection.getContentLength();
-                    supportRange = false;
+                    contentRange = -1;
                 }
-                Log.e("DownloadInfoTask", "ContentLength:" + connection.getContentLength() + " ContentRange:" + contentRange);
+                Log.e("DownloadInfoTask", "ContentLength:" + contentLength
+                        + " ContentRange:" + contentRange);
                 if (contentLength <= 0) {
                     retry(params);
                 } else {
                     if (mCompleteListener != null) {
-                        mCompleteListener.onCompleted(params[0], contentLength, supportRange);
+                        mCompleteListener.onCompleted(params[0], contentLength, contentRange);
                     }
                 }
             } else if (code == HTTP_STATE_SC_REDIRECT) {
@@ -114,6 +115,6 @@ public class DownloadInfoTask extends AsyncTask<String, Integer, Object> {
 
         void onSuspend();
 
-        void onCompleted(String url, long contentLength, boolean supportRange);
+        void onCompleted(String url, long contentLength, long contentRange);
     }
 }
