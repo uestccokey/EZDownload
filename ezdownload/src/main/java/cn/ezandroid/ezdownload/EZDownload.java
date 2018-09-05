@@ -77,7 +77,7 @@ public class EZDownload {
          *
          * @return
          */
-        public List<DownloadFileTask> getDownloaders() {
+        public List<DownloadFileTask> getDownloadFileTasks() {
             return mFileTasks;
         }
 
