@@ -159,6 +159,7 @@ public class EZDownload {
                 mExecutorService = Executors.newFixedThreadPool(mThreadCount);
             }
 
+            mStatus = DownloadStatus.DOWNLOADING;
             mInfoTask = new DownloadInfoTask();
             mInfoTask.setOnCompleteListener(new DownloadInfoTask.OnCompleteListener() {
                 @Override
@@ -306,6 +307,7 @@ public class EZDownload {
                 task.setProgressUpdateListener(null);
                 task.setCompleteListener(null);
             }
+            mDownloadListener = null;
 
             if (mExecutorService != null && !mExecutorService.isShutdown()) {
                 mExecutorService.shutdownNow();
