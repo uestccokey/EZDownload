@@ -47,6 +47,7 @@ public class DownloadInfoTask extends AsyncTask<String, Integer, Object> {
             connection.setReadTimeout(20000);
             connection.setRequestProperty("Accept", "*, */*");
             connection.setRequestProperty("Accept-Charset", "utf-8");
+            connection.setRequestProperty("Connection", "Keep-Alive");
             connection.setRequestProperty("Range", "bytes=0-"); // 用来判断是否支持断点续传
             connection.setRequestMethod("GET");
 
@@ -69,6 +70,10 @@ public class DownloadInfoTask extends AsyncTask<String, Integer, Object> {
                     contentRange = Long.parseLong(rangeString.substring(rangeString.indexOf("-") + 1, rangeString.indexOf('/'))) + 1;
                 } else {
                     contentLength = connection.getContentLength();
+                    if (contentLength <= 0) {
+                        String lengthString = connection.getHeaderField("Content-Length");
+                        contentLength = Long.parseLong(lengthString);
+                    }
                     contentRange = -1;
                 }
                 Log.i("DownloadInfoTask", "ContentLength:" + contentLength + " ContentRange:" + contentRange);

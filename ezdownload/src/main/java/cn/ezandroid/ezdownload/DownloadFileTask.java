@@ -66,6 +66,7 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
             connection.setReadTimeout(20000);
             connection.setRequestProperty("Accept", "*, */*");
             connection.setRequestProperty("Accept-Charset", "utf-8");
+            connection.setRequestProperty("Connection", "Keep-Alive");
             if (mDownloadRequest.getContentRange() > 0) {
                 connection.setRequestProperty("Range", "bytes=" + start + "-" + end);
             }
@@ -91,6 +92,10 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
                     int length;
                     long currentLength = offset;
                     long contentLength = connection.getContentLength();
+                    if (contentLength <= 0) {
+                        String lengthString = connection.getHeaderField("Content-Length");
+                        contentLength = Long.parseLong(lengthString);
+                    }
                     String rangeString = connection.getHeaderField("Content-Range");
                     Log.i("DownloadFileTask", "ContentLength:" + contentLength + " ContentRange:" + rangeString);
                     byte[] buffer = new byte[1024 * 512];
