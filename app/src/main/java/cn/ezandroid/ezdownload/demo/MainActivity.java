@@ -24,16 +24,12 @@ public class MainActivity extends AppCompatActivity {
 
     private EZDownload.Downloader mDownloader;
 
-    private String mUrl = "http://aqgo.ezandroid.cn/AQWeight.zip";
+    private String mUrl = "http://mirror.aarnet.edu.au/pub/TED-talks/911Mothers_2010W-480p.mp4";
 
     // 测试小文件 http://116.62.9.17:8080/examples/2.mp4
     // 测试大文件 http://mirror.aarnet.edu.au/pub/TED-talks/911Mothers_2010W-480p.mp4
     // 测试不支持断点续传的Url https://github.com/lingochamp/FileDownloader/archive/v1.7.4.zip
     // 测试重定向的Url http://t.cn/RCSKsoX
-    // 测试不支持断点续传的Url https://www.baidupcs.com/rest/2.0/pcs/file?method=batchdownload&app_id=250528&zipcontent=%7B%22fs_id%22%3A%5B3132666163%5D%7D
-    // &sign
-    // =DCb740ccc5511e5e8fedcff06b081203:Me9HDWoT%2B5TDoSbAWUnwdeCJJM4%3D&uid=1678264183&time=1536134849&dp-logid=5721017085837119746&dp-callid=0
-    // &vuk=1678264183&zipname=%E3%80%90%E6%96%87%E4%BB%B6%E3%80%91%E5%BD%A2%E5%BD%A2%E8%89%B2%E8%89%B2%E7%9A%84%E8%83%9C%E8%B4%9F%E6%89%8B.pdf.zip
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
