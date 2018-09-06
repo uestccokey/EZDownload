@@ -31,6 +31,13 @@ public class DownloadInfoTask extends AsyncTask<String, Integer, Object> {
 
     @Override
     protected Object doInBackground(String... params) {
+        if (isCancelled()) {
+            if (mCompleteListener != null) {
+                mCompleteListener.onSuspend();
+            }
+            return null;
+        }
+
         HttpURLConnection connection = null;
         try {
             URL url = new URL(params[0]);
@@ -52,7 +59,7 @@ public class DownloadInfoTask extends AsyncTask<String, Integer, Object> {
                 return null;
             }
 
-            Log.e("DownloadInfoTask", "onConnected:" + code + " " + params[0]);
+            Log.i("DownloadInfoTask", "onConnected:" + code + " " + params[0]);
             if (code == HTTP_STATE_SC_OK || code == HTTP_STATE_SC_PARTIAL_CONTENT) {
                 long contentLength;
                 long contentRange;
@@ -64,8 +71,7 @@ public class DownloadInfoTask extends AsyncTask<String, Integer, Object> {
                     contentLength = connection.getContentLength();
                     contentRange = -1;
                 }
-                Log.e("DownloadInfoTask", "ContentLength:" + contentLength
-                        + " ContentRange:" + contentRange);
+                Log.i("DownloadInfoTask", "ContentLength:" + contentLength + " ContentRange:" + contentRange);
                 if (contentLength <= 0) {
                     retry(params);
                 } else {
@@ -76,7 +82,7 @@ public class DownloadInfoTask extends AsyncTask<String, Integer, Object> {
             } else if (code == HTTP_STATE_SC_REDIRECT) {
                 mRedirectCount++;
                 String location = connection.getHeaderField("Location");
-                Log.e("DownloadInfoTask", "Redirect url:" + location + " " + mRedirectCount);
+                Log.i("DownloadInfoTask", "Redirect url:" + location + " " + mRedirectCount);
                 if (TextUtils.isEmpty(location) || mRedirectCount > MAX_REDIRECT_COUNT) {
                     retry(params);
                 } else {

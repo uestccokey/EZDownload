@@ -37,6 +37,36 @@ public class DownloadFileRequest implements Serializable, Cloneable {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof DownloadFileRequest)) return false;
+
+        DownloadFileRequest that = (DownloadFileRequest) o;
+
+        if (mTotalContentLength != that.mTotalContentLength) return false;
+        if (mBlockSize != that.mBlockSize) return false;
+        if (mBlockPosition != that.mBlockPosition) return false;
+        if (mStartPosition != that.mStartPosition) return false;
+        if (mEndPosition != that.mEndPosition) return false;
+        if (mContentRange != that.mContentRange) return false;
+        if (!mUrl.equals(that.mUrl)) return false;
+        return mPath != null ? mPath.equals(that.mPath) : that.mPath == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (mTotalContentLength ^ (mTotalContentLength >>> 32));
+        result = 31 * result + (int) (mBlockSize ^ (mBlockSize >>> 32));
+        result = 31 * result + mBlockPosition;
+        result = 31 * result + (int) (mStartPosition ^ (mStartPosition >>> 32));
+        result = 31 * result + (int) (mEndPosition ^ (mEndPosition >>> 32));
+        result = 31 * result + (int) (mContentRange ^ (mContentRange >>> 32));
+        result = 31 * result + mUrl.hashCode();
+        result = 31 * result + (mPath != null ? mPath.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     protected DownloadFileRequest clone() throws CloneNotSupportedException {
         return (DownloadFileRequest) super.clone();
     }

@@ -8,7 +8,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
-import java.io.IOException;
 import java.util.Locale;
 
 import cn.ezandroid.ezdownload.EZDownload;
@@ -42,6 +41,8 @@ public class MainActivity extends AppCompatActivity {
         mProgressDialog.setCanceledOnTouchOutside(false);
         mProgressDialog.setMessage("Downloading");
         mProgressDialog.setMax(100);
+        mProgressDialog.setProgressNumberFormat(String.format(Locale.getDefault(),
+                "%.2fMB/%.2fMB", 0f, 0f));
         mProgressDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "Pause",
                 (dialog, which) -> {
                     if (mDownloader != null) {
@@ -62,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
                             mProgressDialog.show();
                             long time = System.currentTimeMillis();
                             mDownloader = EZDownload.download(mUrl)
-                                    .setPath("/sdcard/AQWeight.zip.tmp")
+                                    .setPath("/sdcard/Test.tmp")
                                     .setThreadCount(Runtime.getRuntime().availableProcessors() - 1)
                                     .setDownloadListener(new IDownloadListener() {
                                         @Override
@@ -86,11 +87,6 @@ public class MainActivity extends AppCompatActivity {
                                         public void onCompleted() {
                                             mDownloadButton.setText("Completed");
                                             mProgressDialog.dismiss();
-                                            try {
-                                                ZipUtil.unZip("/sdcard/AQWeight.zip.tmp", "/sdcard/AQWeight");
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
-                                            }
                                             Log.e("MainActivity", "onCompleted:" + (System.currentTimeMillis() - time));
                                         }
                                     }).start();

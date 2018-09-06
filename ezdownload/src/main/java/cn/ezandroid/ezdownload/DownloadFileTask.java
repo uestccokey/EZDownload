@@ -77,7 +77,7 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
                 return;
             }
 
-            Log.e("DownloadFileTask", "onConnected:" + code + " " + mDownloadRequest.getUrl() + " " + mDownloadRequest.toString());
+            Log.i("DownloadFileTask", "onConnected:" + code + " " + mDownloadRequest.getUrl() + " " + mDownloadRequest.toString());
             if (code == HTTP_STATE_SC_OK || code == HTTP_STATE_SC_PARTIAL_CONTENT) {
                 mDownloadRequest.setStatus(DOWNLOADING);
 
@@ -92,8 +92,7 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
                     long currentLength = offset;
                     long contentLength = connection.getContentLength();
                     String rangeString = connection.getHeaderField("Content-Range");
-                    Log.e("DownloadFileTask", "ContentLength:" + contentLength
-                            + " ContentRange:" + rangeString);
+                    Log.i("DownloadFileTask", "ContentLength:" + contentLength + " ContentRange:" + rangeString);
                     byte[] buffer = new byte[1024 * 512];
                     while (mDownloadRequest.getCurrentLength() < mDownloadRequest.getBlockSize()
                             && (length = inputStream.read(buffer)) != -1) {
@@ -101,13 +100,14 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
                             return;
                         }
 
+                        randomAccessFile.write(buffer, 0, length);
+
                         currentLength += length;
                         float blockProgress = currentLength * 100f / mDownloadRequest.getBlockSize();
                         float totalProgress = currentLength * 100f / mDownloadRequest.getTotalContentLength();
                         mDownloadRequest.setProgress(totalProgress);
-                        publishProgress(blockProgress, totalProgress);
-                        randomAccessFile.write(buffer, 0, length);
                         mDownloadRequest.setCurrentLength(currentLength);
+                        publishProgress(blockProgress, totalProgress);
                     }
                 } finally {
                     if (randomAccessFile != null) {
@@ -154,12 +154,10 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
         super.onPostExecute(object);
         if (mDownloadRequest.getStatus() != SUSPEND) {
             mDownloadRequest.setStatus(COMPLETED);
-//            Log.e("DownloadFileTask", "onCompleted:" + mDownloadRequest.getUrl() + " " + mDownloadRequest.toString());
             if (mCompleteListener != null) {
                 mCompleteListener.onCompleted();
             }
         } else {
-//            Log.e("DownloadFileTask", "onSuspend:" + mDownloadRequest.getUrl() + " " + mDownloadRequest.toString());
             if (mCompleteListener != null) {
                 mCompleteListener.onSuspend();
             }
@@ -170,7 +168,6 @@ public class DownloadFileTask extends AsyncTask<String, Float, Object> {
     protected void onCancelled() {
         super.onCancelled();
         mDownloadRequest.setStatus(SUSPEND);
-//        Log.e("DownloadFileTask", "onSuspend:" + mDownloadRequest.getUrl() + " " + mDownloadRequest.toString());
         if (mCompleteListener != null) {
             mCompleteListener.onSuspend();
         }

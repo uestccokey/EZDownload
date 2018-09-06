@@ -2,6 +2,7 @@ package cn.ezandroid.ezdownload;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.text.TextUtils;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -23,6 +24,9 @@ public class EZDownload {
     }
 
     public static Downloader download(String url) {
+        if (TextUtils.isEmpty(url)) {
+            throw new IllegalArgumentException("URL can not be empty!");
+        }
         return new Downloader().setUrl(url);
     }
 
@@ -44,6 +48,8 @@ public class EZDownload {
 
         private Handler mMainHandler = new Handler(Looper.getMainLooper());
 
+        private RequestPersistence mRequestPersistence;
+
         private Downloader() {
         }
 
@@ -59,6 +65,11 @@ public class EZDownload {
 
         public Downloader setExecutorService(ExecutorService executorService) {
             mExecutorService = executorService;
+            return this;
+        }
+
+        public Downloader setRequestPersistence(RequestPersistence requestPersistence) {
+            mRequestPersistence = requestPersistence;
             return this;
         }
 
@@ -187,7 +198,7 @@ public class EZDownload {
                             blockSize = (int) Math.ceil((double) contentLength / blockCount);
                         }
                     }
-                    Log.e("EZDownload", "BlockCount:" + blockCount + " BlockSize:" + blockSize);
+                    Log.i("EZDownload", "BlockCount:" + blockCount + " BlockSize:" + blockSize);
 
                     mStatus = DownloadStatus.DOWNLOADING;
                     for (int i = 0; i < blockCount; i++) {
@@ -204,8 +215,22 @@ public class EZDownload {
                             downloadFileRequest.setEndPosition(blockSize * i + blockSize);
                         }
                         downloadFileRequest.setContentRange(contentRange);
+
+                        // 查询是否有已持久化的文件下载请求
+                        if (mRequestPersistence != null) {
+                            DownloadFileRequest findRequest = mRequestPersistence.find(downloadFileRequest);
+                            if (findRequest != null) {
+                                downloadFileRequest = findRequest;
+                            }
+                        }
+
                         DownloadFileTask downloadFileTask = new DownloadFileTask(downloadFileRequest);
                         downloadFileTask.setProgressUpdateListener((position, subProgress, totalProgress) -> {
+                            // 下载进度有变化时，持久化下载进度
+                            if (mRequestPersistence != null) {
+                                mRequestPersistence.save(downloadFileTask.getDownloadFileRequest());
+                            }
+
                             if (mDownloadListener != null) {
                                 mDownloadListener.onProgressUpdated(getDownloadProgress());
                             }
@@ -214,22 +239,18 @@ public class EZDownload {
                             @Override
                             public void onSuspend() {
                                 mStatus = DownloadStatus.SUSPEND;
-                                mMainHandler.post(() -> {
-                                    if (mDownloadListener != null) {
-                                        mDownloadListener.onSuspend();
-                                    }
-                                });
+                                if (mDownloadListener != null) {
+                                    mDownloadListener.onSuspend();
+                                }
                             }
 
                             @Override
                             public void onCompleted() {
                                 if (isDownloadCompleted()) {
                                     mStatus = DownloadStatus.COMPLETED;
-                                    mMainHandler.post(() -> {
-                                        if (mDownloadListener != null) {
-                                            mDownloadListener.onCompleted();
-                                        }
-                                    });
+                                    if (mDownloadListener != null) {
+                                        mDownloadListener.onCompleted();
+                                    }
                                 }
                             }
                         });
@@ -251,10 +272,6 @@ public class EZDownload {
             if (mFileTasks.isEmpty()) {
                 start();
             } else {
-                if (mExecutorService == null || mExecutorService.isShutdown()) {
-                    mExecutorService = Executors.newFixedThreadPool(mThreadCount);
-                }
-
                 mStatus = DownloadStatus.DOWNLOADING;
                 try {
                     List<DownloadFileTask> copyTasks = new ArrayList<>();
@@ -287,10 +304,6 @@ public class EZDownload {
             for (DownloadFileTask task : mFileTasks) {
                 task.cancel(true);
             }
-
-            if (mExecutorService != null && !mExecutorService.isShutdown()) {
-                mExecutorService.shutdownNow();
-            }
             return this;
         }
 
@@ -308,12 +321,13 @@ public class EZDownload {
                 task.setCompleteListener(null);
             }
             mDownloadListener = null;
+            mRequestPersistence = null;
+
+            mFileTasks.clear();
 
             if (mExecutorService != null && !mExecutorService.isShutdown()) {
                 mExecutorService.shutdownNow();
             }
-
-            mFileTasks.clear();
         }
     }
 }
